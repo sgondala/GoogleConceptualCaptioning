@@ -1,0 +1,11 @@
+*.pkl
+*.pth
+*.pyc
+*.bender
+*.h5
+*.json
+*.zip
+*tfevents*
+cider/
+coco-caption/
+UNNECESARY/
