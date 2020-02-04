@@ -1,4 +1,23 @@
-python train.py --caption_model att2in --input_json data/cocotalk_with_cc_vocab.json --input_fc_dir /srv/share2/sgondala/tmp/trainval_36/trainval_resnet101_faster_rcnn_genome_36.tsv --input_att_dir /srv/share2/sgondala/tmp/trainval_36/trainval_resnet101_faster_rcnn_genome_36.tsv --input_label data/cocotalk_with_cc_vocab.h5 --batch_size 10 --learning_rate 3e-5 --learning_rate_decay_start 0 --scheduled_sampling_start 0 --checkpoint_path conceptual_captions_plus_coco_finetune_dec13_3e5_3 --save_checkpoint_every 6000 --val_images_use 5000 --max_epochs 3 --start_from conceptual_base_on_att2in/
+python train.py --caption_model att2in2 --input_json data/cocotalk_with_cc_vocab.json --input_fc_dir /srv/share2/sgondala/tmp/trainval_36/trainval_resnet101_faster_rcnn_genome_36.tsv --input_att_dir /srv/share2/sgondala/tmp/trainval_36/trainval_resnet101_faster_rcnn_genome_36.tsv --input_label data/cocotalk_with_cc_vocab.h5 --batch_size 10 --learning_rate 3e-5 --learning_rate_decay_start 0 --scheduled_sampling_start 0 --checkpoint_path conceptual_captions_plus_coco_finetune_dec13_3e5_3 --save_checkpoint_every 6000 --val_images_use 5000 --max_epochs 3 --rnn_size 2400
+
+python train.py --caption_model att2in2 --input_json data/nocapstalk_with_cc_vocab.json --input_fc_dir /srv/share2/sgondala/tmp/trainval_36/nocaps_val_vg_detector_features_adaptive.h5 --input_att_dir /srv/share2/sgondala/tmp/trainval_36/nocaps_val_vg_detector_features_adaptive.h5 --input_label data/nocapstalk_with_cc_vocab.h5 --batch_size 10 --learning_rate 3e-5 --learning_rate_decay_start 0 --scheduled_sampling_start 0 --checkpoint_path checkpoints/nocaps_train_no_checkpoint_jan_24_3e5 --save_checkpoint_every 6000 --val_images_use 150 --max_epochs 10 --rnn_size 2400
+
+
+Eval on coco - 
+
+
+python eval.py --model coco_base_jan_25_3e5/model.pth --infos_path coco_base_jan_25_3e5/infos_.pkl  --input_fc_dir /srv/share2/sgondala/tmp/trainval_36/trainval_resnet101_faster_rcnn_genome_36.tsv --input_att_dir /srv/share2/sgondala/tmp/trainval_36/trainval_resnet101_faster_rcnn_genome_36.tsv --num_images 20000 --input_json data/cocotalk_with_cc_vocab.json --split train
+
+
+
+Nocaps finetune - 
+
+python train.py --caption_model att2in2 --input_json data/nocapstalk_with_cc_vocab.json --input_fc_dir /srv/share2/sgondala/tmp/trainval_36/nocaps_val_vg_detector_features_adaptive.h5 --input_att_dir /srv/share2/sgondala/tmp/trainval_36/nocaps_val_vg_detector_features_adaptive.h5 --input_label data/nocapstalk_with_cc_vocab.h5 --batch_size 50 --learning_rate 3e-5 --learning_rate_decay_start 0 --scheduled_sampling_start 0 --checkpoint_path checkpoints/nocaps_finetune_coco_base_3e5/ --save_checkpoint_every 20 --val_images_use 200 --max_epochs 30 --start_from checkpoints/coco_base_jan_25_3e5/ --rnn_size 2400
+
+
+
+python train.py --caption_model att2in2 --input_json data/cocotalk_with_cc_vocab.json --input_fc_dir /srv/share2/sgondala/tmp/trainval_36/trainval_resnet101_faster_rcnn_genome_36.tsv --input_att_dir /srv/share2/sgondala/tmp/trainval_36/trainval_resnet101_faster_rcnn_genome_36.tsv --input_label data/cocotalk_with_cc_vocab.h5 --batch_size 10 --learning_rate 3e-5 --learning_rate_decay_start 0 --scheduled_sampling_start 0 --checkpoint_path conceptual_captions_plus_coco_finetune_dec13_3e5_3 --save_checkpoint_every 6000 --val_images_use 5000 --max_epochs 3 --start_from conceptual_base_on_att2in/ --rnn_size 2400
+
 
 
 python eval.py --model log_fc_iter1_coco_finetune/model-732000.pth --infos_path log_fc_iter1_coco_finetune/infos_td-best-732000.pkl --image_folder /srv/datasets/coco/images/val2014/ --num_images 5 
@@ -28,5 +47,35 @@ Mine Att2in2
 
 Opt input Namespace(att_feat_size=2048, att_hid_size=512, batch_size=10, beam_size=1, bleu_reward_weight=0, block_trigrams=0, cached_tokens='google-train-idxs', caption_model='att2in2', checkpoint_path='conceptual_captions_plus_coco_finetune_dec13_3e5_3', cider_reward_weight=1, drop_prob_lm=0.5, drop_worst_after=-1, drop_worst_rate=0, entropy_reward_weight=0, fc_feat_size=2048, grad_clip=0.1, id='', initialize_retrieval=None, input_att_dir='/srv/share2/sgondala/tmp/trainval_36/trainval_resnet101_faster_rcnn_genome_36.tsv', input_box_dir='data/cocotalk_box', input_encoding_size=512, input_fc_dir='/srv/share2/sgondala/tmp/trainval_36/trainval_resnet101_faster_rcnn_genome_36.tsv', input_json='data/cocotalk_with_cc_vocab.json', input_label_h5='data/cocotalk_with_cc_vocab.h5', label_smoothing=0, language_eval=0, learning_rate=3e-05, learning_rate_decay_every=3, learning_rate_decay_rate=0.8, learning_rate_decay_start=0, length_penalty='', load_best_score=1, logit_layers=1, losses_log_every=25, max_epochs=5, max_length=20, noamopt=False, noamopt_factor=1, noamopt_warmup=2000, norm_att_feat=0, norm_box_feat=0, num_layers=1, optim='adam', optim_alpha=0.9, optim_beta=0.999, optim_epsilon=1e-08, reduce_on_plateau=False, remove_bad_endings=0, retrieval_reward_weight=0, rnn_size=2400, rnn_type='lstm', save_checkpoint_every=6000, save_history_ckpt=1, scheduled_sampling_increase_every=5, scheduled_sampling_increase_prob=0.05, scheduled_sampling_max_prob=0.25, scheduled_sampling_start=0, self_critical_after=-1, seq_per_img=5, start_from='conceptual_base_on_att2in/', struc_use_logsoftmax=False, structure_after=-1, structure_loss_type='seqnll', structure_loss_weight=1, structure_sample_n=16, train_only=0, use_bn=0, use_box=0, val_images_use=5000, vse_embed_size=1024, vse_loss_type='contrastive', vse_margin=0.2, vse_max_violation=1, vse_measure='cosine', vse_model='None', vse_no_imgnorm=0, vse_num_layers=1, vse_pool_type='last', vse_rnn_type='gru', vse_use_abs=0, vse_word_dim=300, weight_decay=0)
 
-python eval.py --model conceptual_captions_plus_coco_finetune_dec13_3e5_5/model.pth --infos_path conceptual_captions_plus_coco_finetune_dec13_3e5_5/infos_.pkl --input_fc_dir /srv/share2/sgondala/tmp/trainval_36/nocaps_val_vg_detector_features_adaptive.h5 --input_att_dir /srv/share2/sgondala/tmp/trainval_36/nocaps_val_vg_detector_features_adaptive.h5 --num_images -1 --input_json data/nocapstalk_with_cc_vocab.json --split train --batch_size 50
+python eval.py --model checkpoints/nocaps_finetune_coco_base_3e4/model.pth --infos_path checkpoints/nocaps_finetune_coco_base_3e4/infos_.pkl --input_fc_dir /srv/share2/sgondala/tmp/trainval_36/nocaps_val_vg_detector_features_adaptive.h5 --input_att_dir /srv/share2/sgondala/tmp/trainval_36/nocaps_val_vg_detector_features_adaptive.h5 --input_box_dir /srv/share2/sgondala/tmp/trainval_36/nocaps_val_vg_detector_features_adaptive.h5 --num_images 5 --input_json data/nocapstalk_with_cc_vocab_old.json --split train --out_file_path eval_results/cocobase_plus_nocaps_finetune
 
+
+Shapes:
+
+Conceptual base - [(16304, 512), (2400, 2048), (2400,), (16304, 2400), (16304,), (512, 2400), (512,), (4800, 2400), (4800,), (12000, 512), (12000,), (12000, 2400), (12000,), (512, 2400), (512,), (1, 512), (1,)]
+Coco finetune   - [(16304, 512), (2400, 2048), (2400,), (16304, 2400), (16304,), (512, 2400), (512,), (4800, 2400), (4800,), (12000, 512), (12000,), (12000, 2400), (12000,), (512, 2400), (512,), (1, 512), (1,)]
+
+
+(WRONG!! ) Coco base -       [(16304, 512), (512, 2048), (512,), (16304, 512), (16304,), (512, 512), (512,), (1024, 512), (1024,), (2560, 512), (2560,), (2560, 512), (2560,), (512, 512), (512,), (1, 512), (1,)]
+
+
+Models needed 
+
+1. Conceptual base (Done) - conceptual_base_on_att2in - (33, 33, 33, 33)
+2. Conceptual base + coco fine tune (Done) - conceptual_captions_plus_coco_finetune_dec13_3e5_5 - (77,62,41,60)
+3. Conceptual base + coco fine tune + nocaps fine tune - 
+4. Coco base - coco_base_jan_25_3e5 - (74, 57, 29, 53)
+5. Coco base + nocaps fine tune - nocaps_finetune_coco_base_3e4 - Before removing duplicates - (106, 81, 72, 83), After - (79, 67, 44, 64)
+
+// Not called for
+6. Nocaps base - 
+
+
+TODO: 
+
+1. Run cider score generator. (DONE)
+
+2. Create dataset - Image, caption, cider score.
+3. Write a loader to load this.
+4. Train.
+5. Split into valid and train? 
