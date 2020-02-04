@@ -43,12 +43,15 @@ class HybridLoader:
         return self.id2dict[int(key)]
 
 class CiderDataset(Dataset):
-    def __init__(self, acc_path, captions_path, cider_values_path, word2idx):
+    def __init__(self, acc_path, captions_path, cider_values_path, talk_file):
         self.image_features = HybridLoader(acc_path, 'acc')
         self.cider_vals = np.array(json.load(open('coco_cider_scores.json', 'r'))['CIDEr'])
         self.captions = np.array(json.load(open('coco_generated_captions.json', 'r'))) # List of {image_id:, caption:}
-        self.word2idx = word2idx
-        assert 'UNK' in word2idx
+        ix_to_word = json.load(open(talk_file, 'r'))['ix_to_word']
+        self.word2idx = {}
+        for key in ix_to_word:
+            self.word2idx[ix_to_word[key]] = key
+        assert 'UNK' in self.word2idx
     
     def __len__(self):
         return len(self.captions)
@@ -78,10 +81,6 @@ class CiderDataset(Dataset):
         return (image_features, final_captions, cider_vals)
 
 # dataloader = DataLoader(transformed_dataset, batch_size=32, shuffle=True, num_workers=4)
-
-if __name__ == "__main__":
-    dataset = CiderDataset()            
-
 
 
 
