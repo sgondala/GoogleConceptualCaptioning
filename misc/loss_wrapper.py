@@ -9,6 +9,7 @@ class LossWrapper(torch.nn.Module):
         self.opt = opt
         self.model = model
         if opt.label_smoothing > 0:
+            assert False
             self.crit = utils.LabelSmoothing(smoothing=opt.label_smoothing)
         else:
             self.crit = utils.LanguageModelCriterion()
@@ -33,6 +34,7 @@ class LossWrapper(torch.nn.Module):
 
         reduction = 'none' if drop_worst_flag else 'mean'
         if struc_flag:
+            assert False
             if opt.structure_loss_weight < 1:
                 lm_loss = self.crit(self.model(fc_feats, att_feats, labels, att_masks), labels[:,1:], masks[:,1:], reduction=reduction)
             else:
@@ -49,8 +51,10 @@ class LossWrapper(torch.nn.Module):
             out['lm_loss'] = lm_loss
             out['struc_loss'] = struc_loss
         elif not sc_flag:
+            print("Lables shape ", labels.shape)	
             loss = self.crit(self.model(fc_feats, att_feats, labels, att_masks), labels[:,1:], masks[:,1:], reduction=reduction)        
         else:
+            assert False
             self.model.eval()
             with torch.no_grad():
                 greedy_res, _ = self.model(fc_feats, att_feats, att_masks, mode='sample')

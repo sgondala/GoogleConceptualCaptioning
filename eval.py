@@ -27,9 +27,14 @@ parser.add_argument('--cnn_model', type=str,  default='resnet101',
                 help='resnet101, resnet152')
 parser.add_argument('--infos_path', type=str, default='',
                 help='path to infos to evaluate')
+parser.add_argument('--out_file_path', type=str, default = '')
+
 opts.add_eval_options(parser)
 opts.add_diversity_opts(parser)
 opt = parser.parse_args()
+
+assert len(opt.out_file_path) != 0
+
 print(opt)
 
 # Load infos
@@ -91,4 +96,5 @@ if opt.post_processing == 1:
 if opt.dump_json == 1:
     # dump the json
     # json.dump(split_predictions, open('vis/vis.json', 'w'))
-    json.dump(split_predictions, open(os.path.join('eval_results/', opt.id + '_' + opt.split + '.json'), 'w'))
+    print("Dumping results")
+    json.dump(split_predictions, open(opt.out_file_path + '_' + opt.split + '.json', 'w'))
