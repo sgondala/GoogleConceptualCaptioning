@@ -8,9 +8,9 @@ a = CiderDataset('/srv/share2/sgondala/tmp/trainval_36/trainval_resnet101_faster
 dataloader = DataLoader(a, batch_size=32, shuffle=True)
 
 pretrained_embeddings = torch.load('data/embedding_for_coco_only.pth')
-model = CiderPredictor(pretrained_embeddings=pretrained_embeddings)
+model = CiderPredictor(pretrained=pretrained_embeddings)
 for batch in dataloader:
     image_features, captions, lengths, y = batch
-    out = model(image_features, captions)
+    out = model(image_features, captions.long())
     print(out)
     break
