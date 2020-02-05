@@ -57,8 +57,8 @@ class CiderDataset(Dataset):
         return len(self.captions)
     
     def __getitem__(self, index):
-        if torch.is_tensor(idx):
-            idx = idx.tolist()
+        if torch.is_tensor(index):
+            index = index.tolist()
 
         assert isinstance(index, int)
 

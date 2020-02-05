@@ -10,7 +10,7 @@ import misc.utils as utils
 from torch.nn.utils.rnn import PackedSequence, pack_padded_sequence, pad_packed_sequence
 
 class CiderPredictor(nn.Module):
-    def __init__(self, embed_size=16304, embed_dimension=512, lstm_dimension=512, image_feature_dimension=2048, pretrained=None):
+    def __init__(self, embed_size=16304, embed_dimension=512, lstm_dimension=512, image_feature_dimension=2048, pretrained_embeddings=None):
         super(CiderPredictor, self).__init__()
         self.image_feature_dimension = image_feature_dimension
         self.embeddings = nn.Embedding(embed_size, embed_dimension)
