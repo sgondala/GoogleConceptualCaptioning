@@ -70,18 +70,13 @@ Models needed
 // Not called for
 6. Nocaps base - 
 
+Correlation of coco_predictions = 0.77369998
 
 TODO: 
 
-1. Run cider score generator. (DONE)
-2. Create dataset - Image, caption, cider score (DONE)
-3. Write a loader to load this.
-
-4. Train.
-5. Split into valid and train? 
-
-
-from dataloader_cider_eval import CiderDataset
-a = CiderDataset('/srv/share2/sgondala/tmp/trainval_36/trainval_resnet101_faster_rcnn_genome_36.tsv', 'data/coco_generated_captions.json', 'data/coco_cider_scores.json', 'data/cocotalk_with_cc_vocab.json')
-from torch.utils.data import DataLoader
-dataloader = DataLoader(a, batch_size=10, shuffle=True)
+1. Make nocaps files for some file - ref and out
+Ref - nocaps_ref_file_ascii.json
+Out - nocaps_conceptual_base_with_coco_finetune_1000_images_only_ascii.json
+2. Get cider scores for nocaps
+Cider - nocaps_cider_scores.json
+3. Test on nocaps

@@ -43,10 +43,11 @@ class HybridLoader:
         return self.id2dict[int(key)]
 
 class CiderDataset(Dataset):
-    def __init__(self, acc_path, captions_path, cider_values_path, talk_file):
+    def __init__(self, acc_path, captions_path, cider_values_path, talk_file, is_adaptive = False):
         self.image_features = HybridLoader(acc_path, 'acc')
         self.cider_vals = np.array(json.load(open(cider_values_path, 'r'))['CIDEr'])
         self.captions = np.array(json.load(open(captions_path, 'r'))) # List of {image_id:, caption:}
+        self.is_adaptive = is_adaptive
         ix_to_word = json.load(open(talk_file, 'r'))['ix_to_word']
         self.word2idx = {}
         for key in ix_to_word:
@@ -67,7 +68,11 @@ class CiderDataset(Dataset):
         
         image_id = caption_entry['image_id']
         image_feature = torch.Tensor(self.image_features.get(image_id))
-
+        if self.is_adaptive:
+            image_feature_final = torch.zeros((100, 2048)) #HARDCODED
+            image_feature_final[:image_feature.shape[0], :image_feature.shape[1]] = image_feature
+            image_feature = image_feature_final
+        
         caption = caption_entry['caption'].lower().strip()
         tokens = word_tokenize(caption)
         tokens = [token for token in tokens if token not in punctuations]
@@ -76,7 +81,6 @@ class CiderDataset(Dataset):
         indexed_caption = torch.zeros(16)
         for i in range(length_of_caption):
             indexed_caption[i] = self.word2idx[tokens[i]]
-
         return image_feature, indexed_caption, length_of_caption, y
 
     # def __getitem__(self, idx):
