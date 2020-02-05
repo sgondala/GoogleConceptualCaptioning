@@ -45,12 +45,12 @@ class HybridLoader:
 class CiderDataset(Dataset):
     def __init__(self, acc_path, captions_path, cider_values_path, talk_file):
         self.image_features = HybridLoader(acc_path, 'acc')
-        self.cider_vals = np.array(json.load(open('coco_cider_scores.json', 'r'))['CIDEr'])
-        self.captions = np.array(json.load(open('coco_generated_captions.json', 'r'))) # List of {image_id:, caption:}
+        self.cider_vals = np.array(json.load(open(cider_values_path, 'r'))['CIDEr'])
+        self.captions = np.array(json.load(open(captions_path, 'r'))) # List of {image_id:, caption:}
         ix_to_word = json.load(open(talk_file, 'r'))['ix_to_word']
         self.word2idx = {}
         for key in ix_to_word:
-            self.word2idx[ix_to_word[key]] = key
+            self.word2idx[ix_to_word[key]] = int(key)
         assert 'UNK' in self.word2idx
     
     def __len__(self):
@@ -60,6 +60,8 @@ class CiderDataset(Dataset):
         if torch.is_tensor(idx):
             idx = idx.tolist()
 
+        if not isinstance(idx, list):
+            idx = [idx]
         cider_vals = self.cider_vals[idx]
         captions = self.captions[idx]
         
@@ -75,8 +77,11 @@ class CiderDataset(Dataset):
             tokens = word_tokenize(caption)
             tokens = [token for token in tokens if token not in punctuations]  
             indexed_caption = [w if w in self.word2idx else 'UNK' for w in tokens][:16]
+            indexed_caption = [self.word2idx[w] for w in indexed_caption]
+            print(indexed_caption)
             final_captions.append(indexed_caption)
 
+        print(final_captions) 
         final_captions = torch.Tensor(final_captions)
         return (image_features, final_captions, cider_vals)
 
