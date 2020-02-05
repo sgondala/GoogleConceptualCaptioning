@@ -11,6 +11,7 @@ import torch
 import torch.utils.data as data
 from torch.utils.data import Dataset
 from torch.utils.data import DataLoader
+from torch.utils.data import random_split
 
 import base64
 import csv
@@ -25,18 +26,23 @@ class TempDataset(Dataset):
         return 100
     
     def __getitem__(self, index):
-        return torch.Tensor([1,2,3])*index
+        return index, index**2, index**3
 
 dataset = TempDataset()
-dataloader = DataLoader(dataset, batch_size=10)
+train, valid, test = random_split(dataset, [80, 10, 10])
+print(len(train))
+print(len(valid))
+print(len(test))
+
+dataloader = DataLoader(train, batch_size=10)
 
 for batch in dataloader:
-    # a,b,c = batch
-    # print("A", a)
-    # print("B", b)
-    # print("C", c)
-    print(batch)
-    break
-    # X, y = batch
-    # print("X", X)
-    # print("Y", y)
+    a,b,c = batch
+    print("A", a)
+    print("B", b)
+    print("C", c)
+#     print(batch)
+    # break
+#     # X, y = batch
+#     # print("X", X)
+#     # print("Y", y)

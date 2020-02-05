@@ -23,31 +23,22 @@ class CiderPredictor(nn.Module):
 
     def forward(self, image_regions, captions): # N * 36 * 2048, N * 14
         captions_after_embedding = self.embeddings(captions)
-        print("Captions shape ", captions_after_embedding.shape)
         batch_size = captions.shape[0]
         _, (hn, _) = self.bilstm(captions_after_embedding) #hn = 2*embedding_size
-        print("hn shape ", hn.shape)
         hn = hn.permute(1,0,2)
-        print("hm shape ", hn.shape)
         hn = hn.reshape((batch_size, -1))
-        print("Hn shape ", hn.shape)
         linear_out = self.attention_linear(hn)
-        print("Linear out ", linear_out.shape)
         relu = nn.ReLU()
         linear_out = relu(linear_out)
         linear_out = linear_out.unsqueeze(-1) # N * 2048 * 1
-        print("IM reg ", image_regions.shape)
-        print("LI out shape ", linear_out.shape)
         attention_out = torch.bmm(image_regions, linear_out) # N * 36 * 1
         attention_out = attention_out.squeeze(-1) # N * 36 
         softmax = nn.Softmax(dim = 1)
         weights = softmax(attention_out).unsqueeze(-1) # N * 36 * 1
         attention_out = torch.sum(image_regions * weights, axis = 1) # N * 2048
-        print("attention out shape ", attention_out.shape)
         attention_out = self.attention_layer_2(attention_out) # N * (2*embed_dimension)
         attention_out = relu(attention_out)
         fusion_out = attention_out * hn # N * (2*embed_dimension)
-        print("fusion out shape ", fusion_out.shape)
         output = self.final_layer(fusion_out) # N * 1
         output = relu(output)
-        return output
+        return output.squeeze()
