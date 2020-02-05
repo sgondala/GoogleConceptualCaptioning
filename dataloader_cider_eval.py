@@ -56,34 +56,57 @@ class CiderDataset(Dataset):
     def __len__(self):
         return len(self.captions)
     
-    def __getitem__(self, idx):
+    def __getitem__(self, index):
         if torch.is_tensor(idx):
             idx = idx.tolist()
 
-        if not isinstance(idx, list):
-            idx = [idx]
-        cider_vals = self.cider_vals[idx]
-        captions = self.captions[idx]
+        assert isinstance(index, int)
+
+        y = self.cider_vals[index]
+        caption_entry = self.captions[index]
         
-        image_features = []
-        for caption_entry in captions:
-            image_id = caption_entry['image_id']
-            image_features.append(self.image_features.get(image_id))
-        image_features = torch.Tensor(image_features)
+        image_id = caption_entry['image_id']
+        image_feature = torch.Tensor(self.image_features.get(image_id))
 
-        final_captions = [] # Max size is 15 
-        for i in range(len(captions)):
-            caption = captions[i]['caption'].lower().strip()
-            tokens = word_tokenize(caption)
-            tokens = [token for token in tokens if token not in punctuations]  
-            indexed_caption = [w if w in self.word2idx else 'UNK' for w in tokens][:16]
-            indexed_caption = [self.word2idx[w] for w in indexed_caption]
-            print(indexed_caption)
-            final_captions.append(indexed_caption)
+        caption = caption_entry['caption'].lower().strip()
+        tokens = word_tokenize(caption)
+        tokens = [token for token in tokens if token not in punctuations]
+        tokens = [w if w in self.word2idx else 'UNK' for w in tokens][:16]
+        length_of_caption = len(tokens)
+        indexed_caption = torch.zeros(16)
+        for i in range(length_of_caption):
+            indexed_caption[i] = self.word2idx[tokens[i]]
 
-        print(final_captions) 
-        final_captions = torch.Tensor(final_captions)
-        return (image_features, final_captions, cider_vals)
+        return image_feature, indexed_caption, length_of_caption, y
+
+    # def __getitem__(self, idx):
+    #     if torch.is_tensor(idx):
+    #         idx = idx.tolist()
+
+    #     # if not isinstance(idx, list):
+    #     #     idx = [idx]
+
+    #     # cider_vals = self.cider_vals[idx]
+    #     # captions = self.captions[idx]
+        
+    #     image_features = []
+    #     for caption_entry in captions:
+    #         image_id = caption_entry['image_id']
+    #         image_features.append(self.image_features.get(image_id))
+    #     image_features = torch.Tensor(image_features)
+
+    #     final_captions = [] # Max size is 15 
+    #     for i in range(len(captions)):
+    #         caption = captions[i]['caption'].lower().strip()
+    #         tokens = word_tokenize(caption)
+    #         tokens = [token for token in tokens if token not in punctuations]  
+    #         indexed_caption = [w if w in self.word2idx else 'UNK' for w in tokens][:16]
+    #         indexed_caption = [self.word2idx[w] for w in indexed_caption]
+    #         final_captions.append(indexed_caption)
+
+    #     print(final_captions) 
+    #     final_captions = torch.Tensor(final_captions)
+    #     return (image_features, final_captions, cider_vals)
 
 # dataloader = DataLoader(transformed_dataset, batch_size=32, shuffle=True, num_workers=4)
 

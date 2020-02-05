@@ -74,8 +74,15 @@ Models needed
 TODO: 
 
 1. Run cider score generator. (DONE)
+2. Create dataset - Image, caption, cider score (DONE)
 
-2. Create dataset - Image, caption, cider score.
 3. Write a loader to load this.
 4. Train.
 5. Split into valid and train? 
+
+
+
+
+from dataloader_cider_eval import CiderDataset
+a = CiderDataset('/srv/share2/sgondala/tmp/trainval_36/trainval_resnet101_faster_rcnn_genome_36.tsv', 'data/coco_generated_captions.json', 'data/coco_cider_scores.json', 'data/cocotalk_with_cc_vocab.json')
+dataloader = DataLoader(a, batch_size=10, shuffle=True)
