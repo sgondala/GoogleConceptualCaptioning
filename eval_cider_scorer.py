@@ -33,30 +33,14 @@ test_dataloader = DataLoader(test, batch_size=256, shuffle=False)
 
 pretrained_embeddings = torch.load('data/embedding_for_coco_only.pth')
 model = CiderPredictor(pretrained=pretrained_embeddings).to(device)
-optimizer = optim.Adam(model.parameters(), lr=3e-3)
+model = torch.load('checkpoints/cider_model_3e4_50epochs/model-49.pth')
+# optimizer = optim.Adam(model.parameters(), lr=3e-3)
 criterion = nn.MSELoss()
 
-i = 0
 j = 0
-for epoch in range(50):
-    print("Epoch ", epoch)
-    model.train()
-    for batch in train_dataloader:
-        i += 1
-        image_features, captions, lengths, y = batch
-        out = model(image_features.to(device), captions.long().to(device))    
-        loss = torch.sqrt(criterion(out, y.to(device)))
-        writer.add_scalar('Train loss', loss, i)
-        loss.backward()
-        nn.utils.clip_grad_norm_(model.parameters(), 2.0)
-        optimizer.step()
-        optimizer.zero_grad()
-        model.zero_grad()
-    model.eval()
-    for batch in val_dataloader:
-        j += 1
-        image_features, captions, lengths, y = batch
-        out = model(image_features.to(device), captions.long().to(device))
-        loss = torch.sqrt(criterion(out, y.to(device)))
-        writer.add_scalar('Val loss', loss, j)
-    torch.save(model, 'cider_model/model-' + str(epoch) + '.pth')
+for batch in test_dataloader:
+    j += 1
+    image_features, captions, lengths, y = batch
+    out = model(image_features.to(device), captions.long().to(device))
+    loss = torch.sqrt(criterion(out, y.to(device)))
+    writer.add_scalar('Test loss', loss, j)
