@@ -81,7 +81,7 @@ class CiderDataset(Dataset):
         indexed_caption = torch.zeros(16)
         for i in range(length_of_caption):
             indexed_caption[i] = self.word2idx[tokens[i]]
-        return image_feature, indexed_caption, length_of_caption, y
+        return image_feature, indexed_caption, length_of_caption, y, image_id
 
     # def __getitem__(self, idx):
     #     if torch.is_tensor(idx):

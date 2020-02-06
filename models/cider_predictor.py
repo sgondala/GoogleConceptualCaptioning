@@ -41,4 +41,4 @@ class CiderPredictor(nn.Module):
         fusion_out = attention_out * hn # N * (2*embed_dimension)
         output = self.final_layer(fusion_out) # N * 1
         output = relu(output)
-        return output.squeeze()
+        return output.squeeze(-1)
