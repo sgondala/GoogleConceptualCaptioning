@@ -59,8 +59,27 @@ for batch in test_dataloader:
     loss = torch.sqrt(criterion(out, y.to(device)))
     writer.add_scalar('Nocaps Test loss', loss, j)
     
-out_file = {}
-out_file['actual_values'] = actual_values
-out_file['predicted_values'] = predicted_values
-print(np.corrcoef(np.array(actual_values), np.array(predicted_values)))
-json.dump(out_file, open('cider_for_nocaps_predicted.json', 'w'))
+# out_file = {}
+# out_file['actual_values'] = actual_values
+# out_file['predicted_values'] = predicted_values
+print("Total ", np.corrcoef(np.array(actual_values), np.array(predicted_values)))
+# json.dump(out_file, open('cider_for_nocaps_predicted.json', 'w'))
+
+in_domain_indices = [k for k in image_id_to_domain if image_id_to_domain[k] == 'in-domain']
+near_domain_indices = [k for k in image_id_to_domain if image_id_to_domain[k] == 'near-domain']
+out_domain_indices = [k for k in image_id_to_domain if image_id_to_domain[k] == 'out-domain']
+
+actual_values = np.array(actual_values)
+predicted_values = np.array(predicted_values)
+
+indomain_actual = actual_values[in_domain_indices]
+indomain_predicted = predicted_values[in_domain_indices]
+print("In domain vals ", np.corrcoef(indomain_actual, indomain_predicted))
+
+neardomain_actual = actual_values[near_domain_indices]
+neardomain_predicted = predicted_values[near_domain_indices]
+print("Near domain vals ", np.corrcoef(neardomain_actual, neardomain_predicted))
+
+outdomain_actual = actual_values[out_domain_indices]
+outdomain_predicted = predicted_values[out_domain_indices]
+print("Out domain vals ", np.corrcoef(outdomain_actual, outdomain_predicted))
