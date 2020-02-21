@@ -15,15 +15,13 @@ class LossWrapper(torch.nn.Module):
             self.crit = utils.LanguageModelCriterion()
         self.rl_crit = utils.RewardCriterion()
         self.struc_crit = utils.StructureLosses(opt)
+        # if opt.vse_model != 'None':
+        #     self.vse = VSEFCModel(opt)
+        #     for p in self.vse.parameters():
+        #         p.requires_grad = False
+        #     self.retrieval_reward_weight = opt.retrieval_reward_weight # 
 
-
-        if opt.vse_model != 'None':
-            self.vse = VSEFCModel(opt)
-            for p in self.vse.parameters():
-                p.requires_grad = False
-            self.retrieval_reward_weight = opt.retrieval_reward_weight # 
-
-            self.vse.load_state_dict({k[4:]:v for k,v in torch.load(opt.initialize_retrieval).items() if 'vse.' in k})
+        #     self.vse.load_state_dict({k[4:]:v for k,v in torch.load(opt.initialize_retrieval).items() if 'vse.' in k})
         self.retrieval_reward_weight = 0
 
     def forward(self, fc_feats, att_feats, labels, masks, att_masks, gts, gt_indices,
@@ -54,7 +52,8 @@ class LossWrapper(torch.nn.Module):
             print("Lables shape ", labels.shape)	
             loss = self.crit(self.model(fc_feats, att_feats, labels, att_masks), labels[:,1:], masks[:,1:], reduction=reduction)        
         else:
-            assert False
+            # assert False
+            print("Performing self critical training")
             self.model.eval()
             with torch.no_grad():
                 greedy_res, _ = self.model(fc_feats, att_feats, att_masks, mode='sample')
@@ -63,7 +62,7 @@ class LossWrapper(torch.nn.Module):
                     _masks_greedy = torch.cat([_seqs_greedy.data.new(_seqs_greedy.size(0), 2).fill_(1).float(), (_seqs_greedy > 0).float()[:, :-1]], 1)
                     _seqs_greedy = torch.cat([_seqs_greedy.data.new(_seqs_greedy.size(0), 1).fill_(self.model.vocab_size + 1), _seqs_greedy], 1)
 
-                    baseline = self.vse(fc_feats, att_feats, att_masks, _seqs_greedy, _masks_greedy, True, only_one_retrieval='off')
+                    # baseline = self.vse(fc_feats, att_feats, att_masks, _seqs_greedy, _masks_greedy, True, only_one_retrieval='off')
             self.model.train()
             gen_result, sample_logprobs = self.model(fc_feats, att_feats, att_masks, opt={'sample_max':0}, mode='sample')
             gts = [gts[_] for _ in gt_indices.tolist()]
