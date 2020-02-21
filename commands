@@ -14,9 +14,14 @@ Nocaps finetune -
 
 python train.py --caption_model att2in2 --input_json data/nocapstalk_with_cc_vocab.json --input_fc_dir /srv/share2/sgondala/tmp/trainval_36/nocaps_val_vg_detector_features_adaptive.h5 --input_att_dir /srv/share2/sgondala/tmp/trainval_36/nocaps_val_vg_detector_features_adaptive.h5 --input_label data/nocapstalk_with_cc_vocab.h5 --batch_size 50 --learning_rate 3e-5 --learning_rate_decay_start 0 --scheduled_sampling_start 0 --checkpoint_path checkpoints/nocaps_finetune_coco_base_3e5/ --save_checkpoint_every 20 --val_images_use 200 --max_epochs 30 --start_from checkpoints/coco_base_jan_25_3e5/ --rnn_size 2400
 
-
-
 python train.py --caption_model att2in2 --input_json data/cocotalk_with_cc_vocab.json --input_fc_dir /srv/share2/sgondala/tmp/trainval_36/trainval_resnet101_faster_rcnn_genome_36.tsv --input_att_dir /srv/share2/sgondala/tmp/trainval_36/trainval_resnet101_faster_rcnn_genome_36.tsv --input_label data/cocotalk_with_cc_vocab.h5 --batch_size 10 --learning_rate 3e-5 --learning_rate_decay_start 0 --scheduled_sampling_start 0 --checkpoint_path conceptual_captions_plus_coco_finetune_dec13_3e5_3 --save_checkpoint_every 6000 --val_images_use 5000 --max_epochs 3 --start_from conceptual_base_on_att2in/ --rnn_size 2400
+
+
+Train self critical coco 
+
+python train.py --caption_model att2in2 --input_json data/cocotalk_with_cc_vocab.json --input_fc_dir /srv/share2/sgondala/tmp/trainval_36/trainval_resnet101_faster_rcnn_genome_36.tsv --input_att_dir /srv/share2/sgondala/tmp/trainval_36/trainval_resnet101_faster_rcnn_genome_36.tsv --input_label data/cocotalk_with_cc_vocab.h5 --batch_size 10 --learning_rate 3e-5 --learning_rate_decay_start 0 --scheduled_sampling_start 0 --checkpoint_path conceptual_captions_plus_coco_finetune_dec13_3e5_3 --save_checkpoint_every 6000 --val_images_use 5000 --max_epochs 3 --start_from conceptual_base_on_att2in/ --rnn_size 2400 --self_critical_after 0
+
+
 
 
 
@@ -69,8 +74,6 @@ Models needed
 
 // Not called for
 6. Nocaps base - 
-
-Correlation of coco_predictions = 0.77369998
 
 TODO: 
 

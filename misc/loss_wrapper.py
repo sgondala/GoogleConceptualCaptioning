@@ -71,6 +71,7 @@ class LossWrapper(torch.nn.Module):
             out['reward'] = reward[:,0].mean()
 
             if self.retrieval_reward_weight > 0:
+                assert False
                 _seqs, _sampleLogProbs = gen_result, sample_logprobs
                 _masks = torch.cat([_seqs.data.new(_seqs.size(0), 2).fill_(1).float(), (_seqs > 0).float()[:, :-1]], 1)
 
