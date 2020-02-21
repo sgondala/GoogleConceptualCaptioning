@@ -170,6 +170,12 @@ def parse_opt():
                     help='')
     parser.add_argument('--drop_worst_rate', type=float, default=0,
                     help='')
+    
+
+    # Other
+    parser.add_argument('--cider_model', type=str, default=None)
+    parser.add_argument('--bert_model', type=str, default=None)
+    parser.add_argument('--bert_model', type=str, default=None)
 
     add_vse_options(parser)
 

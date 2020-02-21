@@ -229,9 +229,6 @@ class DataLoader(data.Dataset):
             info_dict['file_path'] = self.info['images'][ix].get('file_path', '')
             infos.append(info_dict)
 
-        # #sort by att_feat length
-        # fc_batch, att_batch, label_batch, gts, infos = \
-        #     zip(*sorted(zip(fc_batch, att_batch, np.vsplit(label_batch, batch_size), gts, infos), key=lambda x: len(x[1]), reverse=True))
         fc_batch, att_batch, label_batch, gts, infos = \
             zip(*sorted(zip(fc_batch, att_batch, label_batch, gts, infos), key=lambda x: 0, reverse=True))
         data = {}
@@ -260,6 +257,8 @@ class DataLoader(data.Dataset):
         data['bounds'] = {'it_pos_now': self.iterators[split], 'it_max': len(self.split_ix[split]), 'wrapped': wrapped}
         data['infos'] = infos
 
+        data['image_ids'] = np.array([info_dict['id'] for info_dict in infos])
+
         data = {k:torch.from_numpy(v) if type(v) is np.ndarray else v for k,v in data.items()} # Turn all ndarray to torch tensor
 
         return data
@@ -271,6 +270,7 @@ class DataLoader(data.Dataset):
         """This function returns a tuple that is further passed to collate_fn
         """
         ix = index #self.split_ix[index]
+        image_id = self.info['images'][ix]['id']
         if self.use_att:
             att_feat = self.att_loader.get(str(self.info['images'][ix]['id']))
             # Reshape to K x C
@@ -301,7 +301,7 @@ class DataLoader(data.Dataset):
             seq = None
         return (fc_feat,
                 att_feat, seq,
-                ix)
+                ix, image_id)
 
     def __len__(self):
         return len(self.info['images'])

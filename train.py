@@ -24,6 +24,13 @@ import misc.utils as utils
 from misc.rewards import init_scorer, get_self_critical_reward
 from misc.loss_wrapper import LossWrapper
 
+from vilbert.vilbert import BertConfig
+from vilbert.vilbert import VILBertForVLTasks
+
+from CiderDataset import CiderDataset
+
+from pytorch_pretrained_bert.tokenization import BertTokenizer
+
 print("Imported all")
 
 try:
@@ -90,9 +97,26 @@ def train(opt):
     opt.vocab = loader.get_vocab()
     model = models.setup(opt).cuda()
     print(model.parameters)
-    del opt.vocab
     dp_model = torch.nn.DataParallel(model)
-    lw_model = LossWrapper(model, opt).cuda()
+    vocab = opt.vocab
+    del opt.vocab
+
+    config = BertConfig.from_json_file(opt.config_file)
+    
+    cider_model = VILBertForVLTasks.from_pretrained(
+            opt.cider_model, config, num_labels=1, default_gpu=True
+            )
+    cider_model.cuda()
+    cider_model.eval()
+    for param in cider_model.features.parameters():
+        param.requires_grad = False
+
+    config = BertConfig.from_json_file(opt.config_file)
+    tokenizer = BertTokenizer.from_pretrained('bert-base-uncased', do_lower_case=True)
+    cider_dataset = CiderDataset(None, opt.input_fc_dir, tokenizer)
+
+    lw_model = LossWrapper(model, opt, vocab, cider_dataset, cider_model).cuda()
+    
     dp_lw_model = torch.nn.DataParallel(lw_model)
 
     epoch_done = True
@@ -178,8 +202,10 @@ def train(opt):
             tmp = [_ if _ is None else _.cuda() for _ in tmp]
             fc_feats, att_feats, labels, masks, att_masks = tmp
             
+            image_ids = data['image_ids']
+
             optimizer.zero_grad()
-            model_out = dp_lw_model(fc_feats, att_feats, labels, masks, att_masks, data['gts'], torch.arange(0, len(data['gts'])), sc_flag, struc_flag, drop_worst_flag)
+            model_out = dp_lw_model(fc_feats, att_feats, labels, masks, att_masks, data['gts'], torch.arange(0, len(data['gts'])), sc_flag, struc_flag, drop_worst_flag, image_ids)
 
             if not drop_worst_flag:
                 loss = model_out['loss'].mean()

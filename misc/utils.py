@@ -80,6 +80,32 @@ def decode_sequence(ix_to_word, seq):
         out.append(txt)
     return out
 
+def decode_sequence_to_dict(ix_to_word, seq, image_ids):
+    assert len(seq) == len(image_ids)
+    output_dict = {}
+    N, D = seq.size()
+    out = []
+    for i in range(N):
+        txt = ''
+        for j in range(D):
+            ix = seq[i,j]
+            if ix > 0 :
+                if j >= 1:
+                    txt = txt + ' '
+                txt = txt + ix_to_word[str(ix.item())]
+            else:
+                break
+        if int(os.getenv('REMOVE_BAD_ENDINGS', '0')):
+            flag = 0
+            words = txt.split(' ')
+            for j in range(len(words)):
+                if words[-j-1] not in bad_endings:
+                    flag = -j
+                    break
+            txt = ' '.join(words[0:len(words)+flag])
+        output_dict[image_ids[i]] = txt
+    return output_dict
+
 def to_contiguous(tensor):
     if tensor.is_contiguous():
         return tensor

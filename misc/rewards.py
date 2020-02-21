@@ -12,6 +12,8 @@ sys.path.append("cider")
 from pyciderevalcap.ciderD.ciderD import CiderD
 sys.path.append("coco-caption")
 from pycocoevalcap.bleu.bleu import Bleu
+from CiderDataset import CiderDataset
+from torch.utils.data import DataLoader
 
 CiderD_scorer = None
 Bleu_scorer = None
@@ -68,6 +70,36 @@ def get_self_critical_reward(greedy_res, data_gts, gen_result, opt):
 
     rewards = np.repeat(scores[:, np.newaxis], gen_result.shape[1], 1)
 
+    return rewards
+
+def get_single_cider_scores(cider_dataset, model):
+    val_dataloader = DataLoader(cider_dataset, batch_size=10,shuffle=False)
+    rewards = []
+    
+    model.eval()
+    for batch in val_dataloader:
+        i += 1
+        features, spatials, image_mask, captions, _, input_mask, segment_ids, co_attention_mask, _, _ = batch
+        _, vil_logit, _, _, _, _, _ = \
+            model(captions.cuda(), features.cuda(), spatials.cuda(), segment_ids.cuda(), input_mask.cuda(), image_mask.cuda(), co_attention_mask.cuda())
+        rewards += vil_logit.squeeze(-1).tolist()
+    
+    return np.array(rewards)
+
+def get_self_critical_reward_using_model(cider_dataset, model, captions_greedy, captions_gen, opt, length_of_output):
+    # Copying code from vilbert
+    # Assuming captions is a mix of both
+    cider_dataset.captions = captions_greedy
+    cider_greedy = get_single_cider_scores(cider_dataset, model)
+
+    cider_dataset.captions = captions_gen
+    cider_gen = get_single_cider_scores(cider_dataset, model)
+
+    assert len(cider_gen) == len(cider_greedy)
+    scores = (cider_gen - cider_greedy) * opt.cider_reward_weight
+
+    # TODO - Why
+    rewards = np.repeat(scores[:, np.newaxis], length_of_output, 1)
     return rewards
 
 def get_scores(data_gts, gen_result, opt):
