@@ -24,8 +24,14 @@ if torch.cuda.is_available():
 else:
     device = torch.device('cpu')
 
-dataset = CiderDataset('/srv/share2/sgondala/tmp/trainval_36/trainval_resnet101_faster_rcnn_genome_36.tsv', 'data/coco_generated_captions.json', 'data/coco_cider_scores.json', 'data/cocotalk_with_cc_vocab.json')
-train, val, test = random_split(dataset, [65000, 5000, 10000])
+# dataset = CiderDataset('/srv/share2/sgondala/tmp/trainval_36/trainval_resnet101_faster_rcnn_genome_36.tsv', 'data/coco_generated_captions.json', 'data/coco_cider_scores.json', 'data/cocotalk_with_cc_vocab.json')
+
+dataset = CiderDataset('/srv/share2/sgondala/tmp/trainval_36/trainval_resnet101_faster_rcnn_genome_36.tsv', 'data/coco_caps_all_images_2_models.json', 'data/coco_caps_all_images_2_models_cider_scores.json', 'data/cocotalk_with_cc_vocab.json')
+
+total_length = len(dataset)
+
+# train, val, test = random_split(dataset, [65000, 5000, 10000])
+train, val, test = random_split(dataset, [total_length - 30000, 10000, 20000]) 
 
 train_dataloader = DataLoader(train, batch_size=256, shuffle=True)
 val_dataloader = DataLoader(val, batch_size=256, shuffle=True)
@@ -33,7 +39,7 @@ test_dataloader = DataLoader(test, batch_size=256, shuffle=False)
 
 pretrained_embeddings = torch.load('data/embedding_for_coco_only.pth')
 model = CiderPredictor(pretrained=pretrained_embeddings).to(device)
-optimizer = optim.Adam(model.parameters(), lr=3e-3)
+optimizer = optim.Adam(model.parameters(), lr=3e-5)
 criterion = nn.MSELoss()
 
 i = 0
@@ -43,7 +49,7 @@ for epoch in range(50):
     model.train()
     for batch in train_dataloader:
         i += 1
-        image_features, captions, lengths, y = batch
+        image_features, captions, lengths, y, _ = batch
         out = model(image_features.to(device), captions.long().to(device))    
         loss = torch.sqrt(criterion(out, y.to(device)))
         writer.add_scalar('Train loss', loss, i)
@@ -55,7 +61,7 @@ for epoch in range(50):
     model.eval()
     for batch in val_dataloader:
         j += 1
-        image_features, captions, lengths, y = batch
+        image_features, captions, lengths, y, _ = batch
         out = model(image_features.to(device), captions.long().to(device))
         loss = torch.sqrt(criterion(out, y.to(device)))
         writer.add_scalar('Val loss', loss, j)

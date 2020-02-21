@@ -125,7 +125,6 @@ class DataLoader(data.Dataset):
             self.seq_length = 1
 
         self.fc_loader = HybridLoader(self.opt.input_fc_dir, 'fc')
-        print("FC Loader ", self.fc_loader[4499])
         self.att_loader = HybridLoader(self.opt.input_att_dir, 'acc')
         self.box_loader = None
         if self.use_box:
