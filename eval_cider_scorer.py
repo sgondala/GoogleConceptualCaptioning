@@ -27,20 +27,38 @@ else:
 
 # dataset = CiderDataset('/srv/share2/sgondala/tmp/trainval_36/trainval_resnet101_faster_rcnn_genome_36.tsv', 'data/coco_generated_captions.json', 'data/coco_cider_scores.json', 'data/cocotalk_with_cc_vocab.json')
 
-image_id_to_domain = json.load(open('data/nocaps_image_id_to_domain.json', 'r'))
+# Create image_id to domain map
+nocaps_val_image_info_actual = open('data/nocaps_val_image_info_actual.json', 'r')
+nocaps_val_image_info_actual = json.load(nocaps_val_image_info_actual)
 
-dataset = CiderDataset('/srv/share2/sgondala/tmp/trainval_36/nocaps_val_vg_detector_features_adaptive.h5', 'data/nocaps_conceptual_base_with_coco_finetune_1000_images_only_ascii.json', 'data/nocaps_cider_scores.json', 'data/nocapstalk_with_cc_vocab.json')
+nocaps_val_image_info = open('data/nocaps_val_image_info.json', 'r')
+nocaps_val_image_info = json.load(nocaps_val_image_info)
+
+open_image_id_to_actual_id = {}
+for entry in nocaps_val_image_info['images']:
+    open_image_id_to_actual_id[entry['open_images_id']] = entry['id']
+
+
+image_id_to_domain = {}
+for image_entry in nocaps_val_image_info_actual:
+    image_id = open_image_id_to_actual_id[image_entry['open_image_id']]
+    domain = str(image_entry['domain'])
+    image_id_to_domain[int(image_id)] = str(domain)
+
+# Done 
+
+dataset = CiderDataset('/srv/share2/sgondala/tmp/trainval_36/nocaps_val_vg_detector_features_adaptive.h5', 'data/nocaps_conceptual_base_with_coco_finetune_1000_images_only_ascii.json', 'data/nocaps_cider_scores.json', 'data/nocapstalk_with_cc_vocab.json', True)
 
 #train, val, test = random_split(dataset, [65000, 5000, 10000])
 
 #train_dataloader = DataLoader(train, batch_size=256, shuffle=True)
 #val_dataloader = DataLoader(val, batch_size=256, shuffle=True)
-test_dataloader = DataLoader(dataset, batch_size=1, shuffle=False)
+test_dataloader = DataLoader(dataset, batch_size=256, shuffle=False)
 
 
 pretrained_embeddings = torch.load('data/embedding_for_coco_only.pth')
 model = CiderPredictor(pretrained=pretrained_embeddings).to(device)
-model = torch.load('checkpoints/cider_model_3e4_50epochs/model-25.pth', map_location=device)
+model = torch.load('cider_model/model-12.pth', map_location=device)
 # optimizer = optim.Adam(model.parameters(), lr=3e-3)
 criterion = nn.MSELoss()
 
@@ -57,20 +75,25 @@ for batch in test_dataloader:
     out = model(image_features.to(device), captions.long().to(device))
     predicted_values += out.tolist()
     loss = torch.sqrt(criterion(out, y.to(device)))
-    writer.add_scalar('Nocaps Test loss', loss, j)
+    # writer.add_scalar('Nocaps Test loss', loss, j)
     
-# out_file = {}
-# out_file['actual_values'] = actual_values
-# out_file['predicted_values'] = predicted_values
+out_file = {}
+out_file['actual_values'] = actual_values
+out_file['predicted_values'] = predicted_values
 print("Total ", np.corrcoef(np.array(actual_values), np.array(predicted_values)))
-# json.dump(out_file, open('cider_for_nocaps_predicted.json', 'w'))
+json.dump(out_file, open('cider_for_nocaps_predicted.json', 'w'))
 
-in_domain_indices = [k for k in image_id_to_domain if image_id_to_domain[k] == 'in-domain']
-near_domain_indices = [k for k in image_id_to_domain if image_id_to_domain[k] == 'near-domain']
-out_domain_indices = [k for k in image_id_to_domain if image_id_to_domain[k] == 'out-domain']
+in_domain_indices = [i for i in range(len(image_ids_list)) if image_id_to_domain[image_ids_list[i]] == 'in-domain'] 
+near_domain_indices = [i for i in range(len(image_ids_list)) if image_id_to_domain[image_ids_list[i]] == 'near-domain']
+out_domain_indices = [i for i in range(len(image_ids_list)) if image_id_to_domain[image_ids_list[i]] == 'out-domain']
+
+print("In ", len(in_domain_indices))
+print("Near ", len(near_domain_indices))
+print("Out ", len(out_domain_indices))
 
 actual_values = np.array(actual_values)
 predicted_values = np.array(predicted_values)
+
 
 indomain_actual = actual_values[in_domain_indices]
 indomain_predicted = predicted_values[in_domain_indices]
