@@ -40,7 +40,7 @@ class HybridLoader:
             self.id2dict = torch.load(cached_file)
             return 
 
-        assert False, "Saved models not found"
+        assert False, "Saved models not found " + cached_file
         print("Saved model not found. Creating dict from file ", filepath)
         id2acc = {}
         id2fc = {}
