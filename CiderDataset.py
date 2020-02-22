@@ -134,7 +134,7 @@ class CiderDataset(Dataset):
         return image_location
 
     def __getitem__(self, index):
-        print(self.captions)
+        # print(self.captions)
         # y = self.cider_vals[index]
         caption_entry = self.captions[index]
         

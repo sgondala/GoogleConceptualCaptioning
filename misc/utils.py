@@ -82,10 +82,10 @@ def decode_sequence(ix_to_word, seq):
 
 def decode_sequence_to_dict(ix_to_word, seq, image_ids):
     assert len(seq) == len(image_ids)
-    output_dict = {}
+    output_list = []
     N, D = seq.size()
-    out = []
     for i in range(N):
+        dict_here = {}
         txt = ''
         for j in range(D):
             ix = seq[i,j]
@@ -103,8 +103,10 @@ def decode_sequence_to_dict(ix_to_word, seq, image_ids):
                     flag = -j
                     break
             txt = ' '.join(words[0:len(words)+flag])
-        output_dict[image_ids[i]] = txt
-    return output_dict
+        dict_here['image_id'] = image_ids[i]
+        dict_here['caption'] = txt
+        output_list.append(dict_here)
+    return output_list
 
 def to_contiguous(tensor):
     if tensor.is_contiguous():

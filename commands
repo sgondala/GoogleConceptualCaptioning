@@ -23,7 +23,7 @@ python train.py --caption_model att2in2 --input_json data/cocotalk_with_cc_vocab
 
 Train on nocaps self critical 
 
-python train.py --caption_model att2in2 --input_json data/nocapstalk_with_cc_vocab.json --input_fc_dir /srv/share2/sgondala/tmp/trainval_36/nocaps_val_vg_detector_features_adaptive.h5 --input_att_dir /srv/share2/sgondala/tmp/trainval_36/nocaps_val_vg_detector_features_adaptive.h5 --input_label data/nocapstalk_with_cc_vocab.h5 --batch_size 50 --learning_rate 3e-5 --learning_rate_decay_start 0 --scheduled_sampling_start 0 --checkpoint_path checkpoints/temp --save_checkpoint_every 20 --val_images_use 200 --max_epochs 30 --rnn_size 2400 --self_critical_after 0
+python train.py --caption_model att2in2 --input_json data/nocapstalk_with_cc_vocab.json --input_fc_dir /srv/share2/sgondala/tmp/trainval_36/python3_stuff/nocaps_val_vg_detector_features_adaptive.h5 --input_att_dir /srv/share2/sgondala/tmp/trainval_36/python3_stuff/nocaps_val_vg_detector_features_adaptive.h5 --input_label data/nocapstalk_with_cc_vocab.h5 --batch_size 50 --learning_rate 3e-5 --learning_rate_decay_start 0 --scheduled_sampling_start 0 --checkpoint_path checkpoints/temp --save_checkpoint_every 20 --val_images_use 200 --max_epochs 30 --rnn_size 2400 --self_critical_after 0 --config_file config/bert_base_6layer_6conect.json --cider_model ../vilbert_beta/checkpoints/clean_coco_and_nocaps_multi_train_ratio_3/pytorch_model_19.bin
 
 
 
