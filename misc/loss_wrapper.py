@@ -38,6 +38,8 @@ class LossWrapper(torch.nn.Module):
             gen_result, sample_logprobs = self.model(fc_feats, att_feats, att_masks, opt={'sample_max':0}, mode='sample')
             gts = [gts[_] for _ in gt_indices.tolist()]
             
+            print("Image ids ", image_ids.shape)
+            print("Hen result ", gen_result.shape)
             greedy_captions = decode_sequence_to_dict(self.ix_to_word, greedy_res, image_ids)
             gen_captions = decode_sequence_to_dict(self.ix_to_word, gen_result, image_ids)
 

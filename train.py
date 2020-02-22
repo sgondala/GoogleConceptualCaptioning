@@ -108,7 +108,7 @@ def train(opt):
             )
     cider_model.cuda()
     cider_model.eval()
-    for param in cider_model.features.parameters():
+    for param in cider_model.parameters():
         param.requires_grad = False
 
     config = BertConfig.from_json_file(opt.config_file)
@@ -175,7 +175,7 @@ def train(opt):
                 # If start self critical training
                 if opt.self_critical_after != -1 and epoch >= opt.self_critical_after:
                     sc_flag = True
-                    init_scorer(opt.cached_tokens)
+                    # init_scorer(opt.cached_tokens)
                 else:
                     sc_flag = False
                 if opt.structure_after != -1 and epoch >= opt.structure_after:
@@ -203,6 +203,13 @@ def train(opt):
             fc_feats, att_feats, labels, masks, att_masks = tmp
             
             image_ids = data['image_ids']
+            
+            print("Fc feats ", fc_feats.shape)
+            print("Att feats ", att_feats.shape)
+            print("Labels ", labels.shape)
+            print("Masks ", masks.shape)
+            print("Att masks ", att_masks.shape)
+            print("Image ids ", image_ids.shape)
 
             optimizer.zero_grad()
             model_out = dp_lw_model(fc_feats, att_feats, labels, masks, att_masks, data['gts'], torch.arange(0, len(data['gts'])), sc_flag, struc_flag, drop_worst_flag, image_ids)

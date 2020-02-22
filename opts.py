@@ -175,6 +175,7 @@ def parse_opt():
     # Other
     parser.add_argument('--cider_model', type=str, default=None)
     parser.add_argument('--bert_model', type=str, default=None)
+    parser.add_argument('--config_file', type=str, default=None)
 
     add_vse_options(parser)
 

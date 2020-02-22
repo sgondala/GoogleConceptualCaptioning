@@ -124,7 +124,6 @@ class DataLoader(data.Dataset):
         else:
             self.seq_length = 1
 
-        self.fc_loader = HybridLoader(self.opt.input_fc_dir, 'fc')
         self.att_loader = HybridLoader(self.opt.input_att_dir, 'acc')
         self.box_loader = None
         if self.use_box:
@@ -203,8 +202,7 @@ class DataLoader(data.Dataset):
 
         for i in range(batch_size):
             # fetch image
-            tmp_fc, tmp_att, tmp_seq, \
-                ix, tmp_wrapped = self._prefetch_process[split].get()
+            tmp_fc, tmp_att, tmp_seq, ix, tmp_image_id, tmp_wrapped = self._prefetch_process[split].get()
             if tmp_wrapped:
                 wrapped = True
 
@@ -271,6 +269,7 @@ class DataLoader(data.Dataset):
         """
         ix = index #self.split_ix[index]
         image_id = self.info['images'][ix]['id']
+        print("Ix and image_id ", ix, image_id)
         if self.use_att:
             att_feat = self.att_loader.get(str(self.info['images'][ix]['id']))
             # Reshape to K x C
@@ -369,10 +368,13 @@ class BlobFetcher():
             self.reset()
 
         ix, wrapped = self._get_next_minibatch_inds()
+        print(type(ix))
+        print(ix)
         tmp = self.split_loader.next()
+        print(tmp)
         if wrapped:
             self.reset()
 
-        assert tmp[-1] == ix, "ix not equal"
+        assert tmp[-2] == ix, "ix not equal"
 
         return tmp + [wrapped]
