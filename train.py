@@ -21,13 +21,6 @@ import misc.utils as utils
 from misc.rewards import init_scorer, get_self_critical_reward
 from misc.loss_wrapper import LossWrapper
 
-from vilbert.vilbert import BertConfig
-from vilbert.vilbert import VILBertForVLTasks
-
-from CiderDataset import CiderDataset
-
-from pytorch_pretrained_bert.tokenization import BertTokenizer
-
 print("Imported all")
 
 try:
@@ -100,8 +93,15 @@ def train(opt):
 
     cider_model = None
     cider_dataset = None
-    
+
     if opt.use_model_for_sc_train == 1:
+        from vilbert.vilbert import BertConfig
+        from vilbert.vilbert import VILBertForVLTasks
+
+        from CiderDataset import CiderDataset
+
+        from pytorch_pretrained_bert.tokenization import BertTokenizer
+
         config = BertConfig.from_json_file(opt.config_file)
         
         cider_model = VILBertForVLTasks.from_pretrained(
