@@ -5,7 +5,6 @@ import os
 import torch
 from torch.utils.data import Dataset
 import numpy as np
-import _pickle as cPickle
 
 from pytorch_pretrained_bert.tokenization import BertTokenizer
 import sys

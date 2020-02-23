@@ -12,7 +12,6 @@ sys.path.append("cider")
 from pyciderevalcap.ciderD.ciderD import CiderD
 sys.path.append("coco-caption")
 from pycocoevalcap.bleu.bleu import Bleu
-from CiderDataset import CiderDataset
 from torch.utils.data import DataLoader
 
 CiderD_scorer = None
@@ -86,7 +85,9 @@ def get_single_cider_scores(cider_dataset, model):
     return np.array(rewards)
 
 def get_self_critical_reward_using_model(cider_dataset, model, captions_greedy, captions_gen, opt, length_of_output):
-    # Copying code from vilbert
+    
+    from CiderDataset import CiderDataset
+    
     # Assuming captions is a mix of both
     cider_dataset.captions = captions_greedy
     cider_greedy = get_single_cider_scores(cider_dataset, model)
