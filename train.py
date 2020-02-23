@@ -204,13 +204,6 @@ def train(opt):
             
             image_ids = data['image_ids']
             
-            print("Fc feats ", fc_feats.shape)
-            print("Att feats ", att_feats.shape)
-            print("Labels ", labels.shape)
-            print("Masks ", masks.shape)
-            print("Att masks ", att_masks.shape)
-            print("Image ids ", image_ids.shape)
-
             optimizer.zero_grad()
             model_out = dp_lw_model(fc_feats, att_feats, labels, masks, att_masks, data['gts'], torch.arange(0, len(data['gts'])), sc_flag, struc_flag, drop_worst_flag, image_ids)
 

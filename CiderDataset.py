@@ -89,7 +89,7 @@ class CiderDataset(Dataset):
             input_mask += padding
             segment_ids += padding
 
-        assert_eq(len(tokens), self._max_seq_length)
+        assert len(tokens) == self._max_seq_length
         return tokens, input_mask, segment_ids
 
     def tensorize(self, tokens, input_mask, segment_ids):

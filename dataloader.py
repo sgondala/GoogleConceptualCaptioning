@@ -269,7 +269,6 @@ class DataLoader(data.Dataset):
         """
         ix = index #self.split_ix[index]
         image_id = self.info['images'][ix]['id']
-        print("Ix and image_id ", ix, image_id)
         if self.use_att:
             att_feat = self.att_loader.get(str(self.info['images'][ix]['id']))
             # Reshape to K x C
@@ -368,10 +367,7 @@ class BlobFetcher():
             self.reset()
 
         ix, wrapped = self._get_next_minibatch_inds()
-        print(type(ix))
-        print(ix)
         tmp = self.split_loader.next()
-        print(tmp)
         if wrapped:
             self.reset()
 

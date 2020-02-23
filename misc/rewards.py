@@ -78,8 +78,7 @@ def get_single_cider_scores(cider_dataset, model):
     
     model.eval()
     for batch in val_dataloader:
-        i += 1
-        features, spatials, image_mask, captions, _, input_mask, segment_ids, co_attention_mask, _, _ = batch
+        features, spatials, image_mask, captions, _, input_mask, segment_ids, co_attention_mask, _ = batch
         _, vil_logit, _, _, _, _, _ = \
             model(captions.cuda(), features.cuda(), spatials.cuda(), segment_ids.cuda(), input_mask.cuda(), image_mask.cuda(), co_attention_mask.cuda())
         rewards += vil_logit.squeeze(-1).tolist()
