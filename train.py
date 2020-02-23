@@ -12,9 +12,6 @@ import time
 import os
 from six.moves import cPickle
 import traceback
-
-print("Imported few")
-
 import opts
 import models
 from dataloader import *
@@ -101,19 +98,23 @@ def train(opt):
     vocab = opt.vocab
     del opt.vocab
 
-    config = BertConfig.from_json_file(opt.config_file)
+    cider_model = None
+    cider_dataset = None
     
-    cider_model = VILBertForVLTasks.from_pretrained(
-            opt.cider_model, config, num_labels=1, default_gpu=True
-            )
-    cider_model.cuda()
-    cider_model.eval()
-    for param in cider_model.parameters():
-        param.requires_grad = False
+    if opt.use_model_for_sc_train == 1:
+        config = BertConfig.from_json_file(opt.config_file)
+        
+        cider_model = VILBertForVLTasks.from_pretrained(
+                opt.cider_model, config, num_labels=1, default_gpu=True
+                )
+        cider_model.cuda()
+        cider_model.eval()
+        for param in cider_model.parameters():
+            param.requires_grad = False
 
-    config = BertConfig.from_json_file(opt.config_file)
-    tokenizer = BertTokenizer.from_pretrained('bert-base-uncased', do_lower_case=True)
-    cider_dataset = CiderDataset(None, opt.input_fc_dir, tokenizer)
+        config = BertConfig.from_json_file(opt.config_file)
+        tokenizer = BertTokenizer.from_pretrained('bert-base-uncased', do_lower_case=True)
+        cider_dataset = CiderDataset(None, opt.input_fc_dir, tokenizer)
 
     lw_model = LossWrapper(model, opt, vocab, cider_dataset, cider_model).cuda()
     
@@ -175,7 +176,8 @@ def train(opt):
                 # If start self critical training
                 if opt.self_critical_after != -1 and epoch >= opt.self_critical_after:
                     sc_flag = True
-                    # init_scorer(opt.cached_tokens)
+                    if opt.use_model_for_sc_train == 0:
+                        init_scorer(opt.cached_tokens)
                 else:
                     sc_flag = False
                 if opt.structure_after != -1 and epoch >= opt.structure_after:

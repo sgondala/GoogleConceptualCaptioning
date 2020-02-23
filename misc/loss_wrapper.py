@@ -41,7 +41,11 @@ class LossWrapper(torch.nn.Module):
             greedy_captions = decode_sequence_to_dict(self.ix_to_word, greedy_res, image_ids)
             gen_captions = decode_sequence_to_dict(self.ix_to_word, gen_result, image_ids)
 
-            reward = get_self_critical_reward_using_model(self.cider_dataset, self.cider_model, greedy_captions, gen_captions, opt, gen_result.shape[1])
+            if self.opt.use_model_for_sc_train == 0:
+                reward = get_self_critical_reward(greedy_res, gts, gen_result, self.opt)
+            else:
+                reward = get_self_critical_reward_using_model(self.cider_dataset, self.cider_model, greedy_captions, gen_captions, opt, gen_result.shape[1])
+            
             reward = torch.from_numpy(reward).float().to(gen_result.device)
             out['reward'] = reward[:,0].mean()
 	

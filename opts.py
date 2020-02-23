@@ -176,6 +176,7 @@ def parse_opt():
     parser.add_argument('--cider_model', type=str, default=None)
     parser.add_argument('--bert_model', type=str, default=None)
     parser.add_argument('--config_file', type=str, default=None)
+    parser.add_argument('--use_model_for_sc_train', type=int, default=1)
 
     add_vse_options(parser)
 
