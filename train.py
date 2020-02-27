@@ -5,6 +5,7 @@ from __future__ import print_function
 import torch
 import torch.nn as nn
 import torch.optim as optim
+import sys
 
 import numpy as np
 
@@ -94,7 +95,7 @@ def train(opt):
     cider_model = None
     cider_dataset = None
 
-    if opt.use_model_for_sc_train == 1:
+    if opt.self_critical_after != -1 and opt.use_model_for_sc_train == 1:
         from vilbert.vilbert import BertConfig
         from vilbert.vilbert import VILBertForVLTasks
 
