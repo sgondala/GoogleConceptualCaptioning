@@ -21,6 +21,7 @@ import eval_utils
 import misc.utils as utils
 from misc.rewards import init_scorer, get_self_critical_reward
 from misc.loss_wrapper import LossWrapper
+from misc.utils import decode_sequence 
 
 print("Imported all")
 
@@ -90,7 +91,7 @@ def train(opt):
     print(model.parameters)
     dp_model = torch.nn.DataParallel(model)
     vocab = opt.vocab
-    del opt.vocab
+    # del opt.vocab
 
     cider_model = None
     cider_dataset = None
@@ -208,6 +209,13 @@ def train(opt):
             image_ids = data['image_ids']
             
             optimizer.zero_grad()
+            '''
+            for i in range(len(image_ids)):
+                data_here = np.array(data['gts'][i])
+                image_id_here = image_ids[i]
+                print(image_id_here)
+                print(decode_sequence(opt.vocab, np.array(data_here)))
+            '''
             model_out = dp_lw_model(fc_feats, att_feats, labels, masks, att_masks, data['gts'], torch.arange(0, len(data['gts'])), sc_flag, struc_flag, drop_worst_flag, image_ids)
 
             if not drop_worst_flag:

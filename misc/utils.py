@@ -57,7 +57,10 @@ def if_use_feat(caption_model):
 
 # Input: seq, N*D numpy array, with element 0 .. vocab_size. 0 is END token.
 def decode_sequence(ix_to_word, seq):
-    N, D = seq.size()
+    if isinstance(seq, np.ndarray):
+        N, D = seq.shape
+    else:
+        N, D = seq.size()
     out = []
     for i in range(N):
         txt = ''

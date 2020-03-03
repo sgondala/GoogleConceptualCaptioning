@@ -141,7 +141,7 @@ def parse_opt():
     # misc
     parser.add_argument('--id', type=str, default='',
                     help='an id identifying this run/job. used in cross-val and appended when writing progress files')
-    parser.add_argument('--train_only', type=int, default=0,
+    parser.add_argument('--train_only', type=int, default=1,
                     help='if true then use 80k, else use 110k')
 
 

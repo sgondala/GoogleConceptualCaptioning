@@ -139,6 +139,7 @@ class DataLoader(data.Dataset):
         for ix in range(len(self.info['images'])):
             img = self.info['images'][ix]
             if not 'split' in img:
+                print("Came to no split")
                 self.split_ix['train'].append(ix)
                 self.split_ix['val'].append(ix)
                 self.split_ix['test'].append(ix)
