@@ -13,6 +13,7 @@ from pyciderevalcap.ciderD.ciderD import CiderD
 sys.path.append("coco-caption")
 from pycocoevalcap.bleu.bleu import Bleu
 from torch.utils.data import DataLoader
+from nltk import word_tokenize
 
 CiderD_scorer = None
 Bleu_scorer = None
@@ -71,6 +72,40 @@ def get_self_critical_reward(greedy_res, data_gts, gen_result, opt):
 
     return rewards
 
+def get_log_probability(caption, language_model_tokenizer, language_model):
+    # TODO: Batch?
+    # input_ids = torch.tensor(language_model_tokenizer.encode(caption, add_special_tokens=True)).unsqueeze(0) # Batch size 1
+    tokenize_input = language_model_tokenizer.tokenize(caption)
+    
+    # TODO: Check start vs end of token
+    #50256 is the token_id for <|endoftext|>
+    tensor_input = torch.tensor([[50256] + language_model_tokenizer.convert_tokens_to_ids(tokenize_input)])
+    with torch.no_grad():
+        outputs = language_model(tensor_input, labels=tensor_input)
+        _, logits = outputs[:2]
+    
+    lp = 0.0
+    
+    for i in range(len(tokenize_input)):
+        masked_index = i
+        predicted_score = logits[0, masked_index]
+        predicted_prob = torch.nn.functional.softmax(predicted_score)
+        lp += np.log(predicted_prob[language_model_tokenizer.convert_tokens_to_ids([tokenize_input[i]])[0]])
+    
+    return lp
+
+def get_slor_score(unigram_prob_dict, logprob, caption):
+    uni = 0.0
+    caption = caption.strip('.')
+    for w in word_tokenize(caption):
+        if not w.lower()[-1].isalpha():
+            w = w.lower()[:-1]
+        if w.lower() not in unigram_prob_dict.keys():
+            return -1
+        uni += np.log(unigram_prob_dict[w.lower()])
+    n = len(caption.split())
+    return ((logprob - uni) / n)
+
 def get_single_cider_scores(cider_dataset, model):
     val_dataloader = DataLoader(cider_dataset, batch_size=10,shuffle=False)
     rewards = []
@@ -84,7 +119,7 @@ def get_single_cider_scores(cider_dataset, model):
     
     return np.array(rewards)
 
-def get_self_critical_reward_using_model(cider_dataset, model, captions_greedy, captions_gen, opt, length_of_output):
+def get_self_critical_cider_reward_using_model(cider_dataset, model, captions_greedy, captions_gen, opt, length_of_output):
     
     from CiderDataset import CiderDataset
     
@@ -98,9 +133,32 @@ def get_self_critical_reward_using_model(cider_dataset, model, captions_greedy, 
     assert len(cider_gen) == len(cider_greedy)
     scores = (cider_gen - cider_greedy) * opt.cider_reward_weight
 
-    # TODO - Why
     rewards = np.repeat(scores[:, np.newaxis], length_of_output, 1)
     return rewards
+
+def get_self_critical_slor_reward_using_model(language_model, language_model_tokenizer, captions_greedy, captions_gen, unigram_prob_dict, length_of_output):
+    gen_slor_scores = []
+    greedy_slor_scores = []
+
+    for entry in captions_gen:
+        caption = entry['caption']
+        log_prob_of_sentence = get_log_probability(caption, language_model_tokenizer, language_model)
+        slor_score = get_slor_score(unigram_prob_dict, log_prob_of_sentence, caption)
+        gen_slor_scores += slor_score
+    
+    for entry in captions_greedy:
+        caption = entry['caption']
+        log_prob_of_sentence = get_log_probability(caption, language_model_tokenizer, language_model)
+        slor_score = get_slor_score(unigram_prob_dict, log_prob_of_sentence, caption)
+        greedy_slor_scores += slor_score
+    
+    gen_slor_scores = np.array(gen_slor_scores)
+    greedy_slor_scores = np.array(greedy_slor_scores)
+    
+    scores = gen_slor_scores - greedy_slor_scores
+    rewards = np.repeat(scores[:, np.newaxis], length_of_output, 1)
+    return rewards
+
 
 def get_scores(data_gts, gen_result, opt):
     batch_size = gen_result.size(0)# batch_size = sample_size * seq_per_img

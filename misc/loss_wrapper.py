@@ -4,7 +4,7 @@ from misc.rewards import init_scorer, get_self_critical_reward, get_self_critica
 from misc.utils import decode_sequence_to_dict
 
 class LossWrapper(torch.nn.Module):
-    def __init__(self, model, opt, ix_to_word=None, cider_dataset=None, cider_model=None):
+    def __init__(self, model, opt, ix_to_word=None, cider_dataset=None, cider_model=None, language_model=None, unigram_prob_dict=None):
         super(LossWrapper, self).__init__()
         self.opt = opt
         self.model = model
@@ -19,6 +19,8 @@ class LossWrapper(torch.nn.Module):
         self.ix_to_word = ix_to_word
         self.cider_dataset = cider_dataset
         self.cider_model = cider_model
+        self.language_model = language_model
+        self.unigram_prob_dict = unigram_prob_dict
 
     def forward(self, fc_feats, att_feats, labels, masks, att_masks, gts, gt_indices,
                 sc_flag, struc_flag, drop_worst_flag, image_ids):

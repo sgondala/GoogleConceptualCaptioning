@@ -21,7 +21,7 @@ import eval_utils
 import misc.utils as utils
 from misc.rewards import init_scorer, get_self_critical_reward
 from misc.loss_wrapper import LossWrapper
-from misc.utils import decode_sequence 
+from misc.utils import decode_sequence
 
 print("Imported all")
 
@@ -96,6 +96,9 @@ def train(opt):
     cider_model = None
     cider_dataset = None
 
+    initial_cider_model_weights = []
+    final_cider_model_weights = []
+
     if opt.self_critical_after != -1 and opt.use_model_for_sc_train == 1:
         from vilbert.vilbert import BertConfig
         from vilbert.vilbert import VILBertForVLTasks
@@ -103,6 +106,7 @@ def train(opt):
         from CiderDataset import CiderDataset
 
         from pytorch_pretrained_bert.tokenization import BertTokenizer
+        from transformers import GPT2Tokenizer, GPT2LMHeadModel
 
         config = BertConfig.from_json_file(opt.config_file)
         
@@ -114,9 +118,26 @@ def train(opt):
         for param in cider_model.parameters():
             param.requires_grad = False
 
+        initial_cider_model_weights = list(cider_model.parameters())
+
         config = BertConfig.from_json_file(opt.config_file)
         tokenizer = BertTokenizer.from_pretrained('bert-base-uncased', do_lower_case=True)
         cider_dataset = CiderDataset(None, opt.input_fc_dir, tokenizer)
+
+        # Slor scores
+        open_gpt_tokenizer = GPT2Tokenizer.from_pretrained("gpt2")
+        open_gpt_model = GPT2LMHeadModel.from_pretrained('gpt2')
+        open_gpt_model.cuda()
+        open_gpt_model.eval()
+        for param in open_gpt_model.parameters():
+            param.requires_grad = False
+
+        unigram_prob_dict = json.load(open(opt.unigram_prob_file, 'r'))
+
+        # Vifidel scores
+        glove_embedding = 
+        parser.add_argument('--ground_truth_object_annotations', type=str, default=None)
+
 
     lw_model = LossWrapper(model, opt, vocab, cider_dataset, cider_model).cuda()
     
@@ -329,6 +350,11 @@ def train(opt):
             # Stop if reaching max epochs
             if epoch >= opt.max_epochs and opt.max_epochs != -1:
                 break
+        
+        if cider_model is not None:
+            final_cider_model_weights = list(cider_model.parameters())
+            assert initial_cider_model_weights == final_cider_model_weights
+
     except (RuntimeError, KeyboardInterrupt):
         print('Save ckpt on exception ...')
         save_checkpoint(model, infos, optimizer)

@@ -178,6 +178,13 @@ def parse_opt():
     parser.add_argument('--config_file', type=str, default=None)
     parser.add_argument('--use_model_for_sc_train', type=int, default=1)
 
+    # Solr scores
+    parser.add_argument('--unigram_prob_file', type=str, default=None)
+
+    # Vifidel scores - 0 to 1 (0 is worse, 1 is best)
+    parser.add_argument('--glove_embedding', type=str, default=None)
+    parser.add_argument('--ground_truth_object_annotations', type=str, default=None)
+
     add_vse_options(parser)
 
     args = parser.parse_args()
