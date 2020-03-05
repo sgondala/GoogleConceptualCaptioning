@@ -1,10 +1,13 @@
 import torch
+import numpy as np
 import misc.utils as utils
-from misc.rewards import init_scorer, get_self_critical_reward, get_self_critical_reward_using_model
+from misc.rewards import init_scorer, get_self_critical_reward
 from misc.utils import decode_sequence_to_dict
+from misc.slor_scoring import get_slor_rewards
+from misc.cider_scoring import get_self_critical_cider_reward_using_model
 
 class LossWrapper(torch.nn.Module):
-    def __init__(self, model, opt, ix_to_word=None, cider_dataset=None, cider_model=None, language_model=None, unigram_prob_dict=None):
+    def __init__(self, model, opt, ix_to_word=None, cider_dataset=None, cider_model=None, language_model=None, language_model_tokenizer = None, unigram_prob_dict=None):
         super(LossWrapper, self).__init__()
         self.opt = opt
         self.model = model
@@ -20,11 +23,11 @@ class LossWrapper(torch.nn.Module):
         self.cider_dataset = cider_dataset
         self.cider_model = cider_model
         self.language_model = language_model
+        self.language_model_tokenizer = language_model_tokenizer
         self.unigram_prob_dict = unigram_prob_dict
 
     def forward(self, fc_feats, att_feats, labels, masks, att_masks, gts, gt_indices,
                 sc_flag, struc_flag, drop_worst_flag, image_ids):
-        opt = self.opt        
         out = {}
         reduction = 'none' if drop_worst_flag else 'mean'
 
@@ -42,12 +45,20 @@ class LossWrapper(torch.nn.Module):
             
             greedy_captions = decode_sequence_to_dict(self.ix_to_word, greedy_res, image_ids)
             gen_captions = decode_sequence_to_dict(self.ix_to_word, gen_result, image_ids)
+            length_of_output = gen_result.shape[1]
 
-            if self.opt.use_model_for_sc_train == 0:
+            reward = np.zeros((len(greedy_captions), length_of_output))
+            if self.opt.use_ref_caps:
                 reward = get_self_critical_reward(greedy_res, gts, gen_result, self.opt)
             else:
-                reward = get_self_critical_reward_using_model(self.cider_dataset, self.cider_model, greedy_captions, gen_captions, opt, gen_result.shape[1])
-            
+                if self.opt.use_cider:
+                    cider_reward = get_self_critical_cider_reward_using_model(self.cider_dataset, self.cider_model, greedy_captions, gen_captions, self.opt, length_of_output)
+                    assert cider_reward.shape == reward.shape
+                    reward += cider_reward
+                if self.opt.use_slor:
+                    slor_reward = get_slor_rewards(greedy_captions, gen_captions, self.unigram_prob_dict, self.language_model_tokenizer, self.language_model, length_of_output)
+                    reward += slor_reward
+
             reward = torch.from_numpy(reward).float().to(gen_result.device)
             out['reward'] = reward[:,0].mean()
 	

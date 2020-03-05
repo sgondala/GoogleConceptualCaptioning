@@ -170,20 +170,24 @@ def parse_opt():
                     help='')
     parser.add_argument('--drop_worst_rate', type=float, default=0,
                     help='')
-    
 
-    # Other
+    # CIDEr scores
     parser.add_argument('--cider_model', type=str, default=None)
     parser.add_argument('--bert_model', type=str, default=None)
     parser.add_argument('--config_file', type=str, default=None)
-    parser.add_argument('--use_model_for_sc_train', type=int, default=1)
+    parser.add_argument('--use_cider', action='store_true')
 
     # Solr scores
     parser.add_argument('--unigram_prob_file', type=str, default=None)
+    parser.add_argument('--use_slor', action='store_true')
 
     # Vifidel scores - 0 to 1 (0 is worse, 1 is best)
     parser.add_argument('--glove_embedding', type=str, default=None)
     parser.add_argument('--ground_truth_object_annotations', type=str, default=None)
+    parser.add_argument('--use_vifidel', action='store_true')
+
+    # Other
+    parser.add_argument('--use_ref_caps', action='store_true')
 
     add_vse_options(parser)
 

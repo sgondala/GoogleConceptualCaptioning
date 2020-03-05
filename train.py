@@ -96,50 +96,57 @@ def train(opt):
     cider_model = None
     cider_dataset = None
 
+    open_gpt_tokenizer = None
+    open_gpt_model = None
+    unigram_prob_dict = None
+
+    glove_embedding = None
+    ground_truth_object_annotations = None
+
     initial_cider_model_weights = []
     final_cider_model_weights = []
 
-    if opt.self_critical_after != -1 and opt.use_model_for_sc_train == 1:
-        from vilbert.vilbert import BertConfig
-        from vilbert.vilbert import VILBertForVLTasks
+    if opt.self_critical_after != -1 and opt.use_ref_caps:
+        # CIDEr
+        if opt.use_cider:
+            from vilbert.vilbert import BertConfig
+            from vilbert.vilbert import VILBertForVLTasks
 
-        from CiderDataset import CiderDataset
+            from CiderDataset import CiderDataset
 
-        from pytorch_pretrained_bert.tokenization import BertTokenizer
-        from transformers import GPT2Tokenizer, GPT2LMHeadModel
+            from pytorch_pretrained_bert.tokenization import BertTokenizer
 
-        config = BertConfig.from_json_file(opt.config_file)
-        
-        cider_model = VILBertForVLTasks.from_pretrained(
-                opt.cider_model, config, num_labels=1, default_gpu=True
-                )
-        cider_model.cuda()
-        cider_model.eval()
-        for param in cider_model.parameters():
-            param.requires_grad = False
+            cider_model = VILBertForVLTasks.from_pretrained(opt.cider_model, config, num_labels=1, default_gpu=True)
+            cider_model.cuda()
+            cider_model.eval()
+            for param in cider_model.parameters():
+                param.requires_grad = False
 
-        initial_cider_model_weights = list(cider_model.parameters())
+            initial_cider_model_weights = list(cider_model.parameters())
 
-        config = BertConfig.from_json_file(opt.config_file)
-        tokenizer = BertTokenizer.from_pretrained('bert-base-uncased', do_lower_case=True)
-        cider_dataset = CiderDataset(None, opt.input_fc_dir, tokenizer)
+            config = BertConfig.from_json_file(opt.config_file)
+            tokenizer = BertTokenizer.from_pretrained('bert-base-uncased', do_lower_case=True)
+            cider_dataset = CiderDataset(None, opt.input_fc_dir, tokenizer)
 
-        # Slor scores
-        open_gpt_tokenizer = GPT2Tokenizer.from_pretrained("gpt2")
-        open_gpt_model = GPT2LMHeadModel.from_pretrained('gpt2')
-        open_gpt_model.cuda()
-        open_gpt_model.eval()
-        for param in open_gpt_model.parameters():
-            param.requires_grad = False
+        # SLOR
+        if opt.use_slor:
+            from transformers import GPT2Tokenizer, GPT2LMHeadModel
+            open_gpt_tokenizer = GPT2Tokenizer.from_pretrained('gpt2')
+            open_gpt_model = GPT2LMHeadModel.from_pretrained('gpt2')
+            open_gpt_model.cuda()
+            open_gpt_model.eval()
+            for param in open_gpt_model.parameters():
+                param.requires_grad = False
 
-        unigram_prob_dict = json.load(open(opt.unigram_prob_file, 'r'))
+            unigram_prob_dict = json.load(open(opt.unigram_prob_file, 'r'))
 
-        # Vifidel scores
-        glove_embedding = 
-        parser.add_argument('--ground_truth_object_annotations', type=str, default=None)
+        # VIFIDEL
+        if opt.use_vifidel:
+            from torchtext.vocab import GloVe    
+            glove_embedding = GloVe(name="42B", dim=300)
+            ground_truth_object_annotations = json.load(open(opt.ground_truth_object_annotations, 'r'))
 
-
-    lw_model = LossWrapper(model, opt, vocab, cider_dataset, cider_model).cuda()
+    lw_model = LossWrapper(model, opt, vocab, cider_dataset, cider_model, open_gpt_model, open_gpt_tokenizer, unigram_prob_dict).cuda()
     
     dp_lw_model = torch.nn.DataParallel(lw_model)
 
