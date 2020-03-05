@@ -101,6 +101,7 @@ def train(opt):
     unigram_prob_dict = None
 
     glove_embedding = None
+    glove_ix_to_word = None
     ground_truth_object_annotations = None
 
     initial_cider_model_weights = []
@@ -141,9 +142,9 @@ def train(opt):
             unigram_prob_dict = json.load(open(opt.unigram_prob_file, 'r'))
 
         # VIFIDEL
-        if opt.use_vifidel:
-            from torchtext.vocab import GloVe    
-            glove_embedding = GloVe(name="42B", dim=300)
+        if opt.use_vifidel:   
+            glove_embedding = nn.Embedding.from_pretrained(torch.load(opt.glove_vectors), freeze=True)
+            glove_ix_to_word = json.load(open(opt.glove_ix_to_word, 'r'))
             ground_truth_object_annotations = json.load(open(opt.ground_truth_object_annotations, 'r'))
 
     lw_model = LossWrapper(model, opt, vocab, cider_dataset, cider_model, open_gpt_model, open_gpt_tokenizer, unigram_prob_dict).cuda()

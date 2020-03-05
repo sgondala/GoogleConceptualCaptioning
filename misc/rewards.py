@@ -72,8 +72,6 @@ def get_self_critical_reward(greedy_res, data_gts, gen_result, opt):
 
     return rewards
 
-
-
 def get_scores(data_gts, gen_result, opt):
     batch_size = gen_result.size(0)# batch_size = sample_size * seq_per_img
     seq_per_img = batch_size // len(data_gts)

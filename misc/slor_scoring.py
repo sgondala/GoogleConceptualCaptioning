@@ -1,4 +1,3 @@
-
 import numpy as np
 import torch
 from nltk import word_tokenize
@@ -60,11 +59,15 @@ def clip_slor_scores(slor_scores):
 def get_slor_rewards(greedy_captions, gen_captions, unigram_prob_dict, language_model_tokenizer, language_model, length_of_output):
     greedy_captions_list = [entry['caption'] for entry in greedy_captions]
     gen_captions_list = [entry['caption'] for entry in gen_captions]
+    
     greedy_captions_log_probabilities = get_log_probability(greedy_captions_list, language_model_tokenizer, language_model)
     gen_captions_log_probabilities = get_log_probability(gen_captions_list, language_model_tokenizer, language_model)
+    
     greedy_slor_scores = clip_slor_scores(get_slor_score(unigram_prob_dict, greedy_captions_log_probabilities, greedy_captions_list))
     gen_slor_scores = clip_slor_scores(get_slor_score(unigram_prob_dict, gen_captions_log_probabilities, gen_captions_list))
+    
     assert len(greedy_slor_scores) == len(gen_slor_scores)
+    
     scores = gen_slor_scores - greedy_slor_scores
     rewards = np.repeat(scores[:, np.newaxis], length_of_output, 1)
     return rewards
