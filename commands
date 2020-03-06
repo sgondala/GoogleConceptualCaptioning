@@ -70,9 +70,7 @@ Opt input Namespace(att_feat_size=2048, att_hid_size=512, batch_size=10, beam_si
 python eval.py --model checkpoints/nocaps_finetune_coco_base_3e4/model.pth --infos_path checkpoints/nocaps_finetune_coco_base_3e4/infos_.pkl --input_fc_dir /srv/share2/sgondala/tmp/trainval_36/nocaps_val_vg_detector_features_adaptive.h5 --input_att_dir /srv/share2/sgondala/tmp/trainval_36/nocaps_val_vg_detector_features_adaptive.h5 --input_box_dir /srv/share2/sgondala/tmp/trainval_36/nocaps_val_vg_detector_features_adaptive.h5 --num_images 5 --input_json data/nocapstalk_with_cc_vocab_old.json --split train --out_file_path eval_results/cocobase_plus_nocaps_finetune
 
 
-Coco eval 
 
-python eval.py --model checkpoints/coco_train_on_cc_using_self_critical_after_3/model-30000.pth --infos_path checkpoints/coco_train_on_cc_using_self_critical_after_3/infos_-30000.pkl --num_images -1 --input_fc_dir /srv/share2/sgondala/tmp/trainval_36/trainval_resnet101_faster_rcnn_genome_36.tsv --input_att_dir /srv/share2/sgondala/tmp/trainval_36/trainval_resnet101_faster_rcnn_genome_36.tsv --input_box_dir /srv/share2/sgondala/tmp/trainval_36/trainval_resnet101_faster_rcnn_genome_36.tsv --input_json data/cocotalk_with_cc_vocab.json --split val --out_file_path eval_results/coco_val_captions_on_coco_train_on_cc_sc_after_3_30k
 
 Shapes:
 
@@ -108,9 +106,11 @@ Train self critical coco - cider and slor
 
 python train.py --caption_model att2in2 --input_json data/cocotalk_with_cc_vocab_rm_8_same_order_for_self_critical.json --input_fc_dir /srv/share2/sgondala/tmp/trainval_36/python3_stuff/trainval_resnet101_faster_rcnn_genome_36.tsv --input_att_dir /srv/share2/sgondala/tmp/trainval_36/python3_stuff/trainval_resnet101_faster_rcnn_genome_36.tsv --input_label data/cocotalk_with_cc_vocab.h5 --batch_size 50 --learning_rate 5e-5 --learning_rate_decay_start 0 --scheduled_sampling_start 0 --checkpoint_path checkpoints/coco_sc_on_exp2_5e5_vilbert_10 --save_checkpoint_every 100 --val_images_use 5000 --max_epochs 5 --rnn_size 2400 --self_critical_after 0  --seq_per_img 1 --start_from checkpoints/coco_on_cc_rm_8_exp_2_15e5/ --use_cider --use_slor
 
-
-
-
 python train.py --caption_model att2in2 --input_json data/nocapstalk_with_cc_vocab.json --input_fc_dir /srv/share2/sgondala/tmp/trainval_36/python3_stuff/nocaps_val_vg_detector_features_adaptive.h5 --input_att_dir /srv/share2/sgondala/tmp/trainval_36/python3_stuff/nocaps_val_vg_detector_features_adaptive.h5 --input_label data/nocapstalk_with_cc_vocab.h5 --batch_size 10 --learning_rate 3e-5 --learning_rate_decay_start 0 --scheduled_sampling_start 0 --checkpoint_path checkpoints/temp --save_checkpoint_every 20 --val_images_use 200 --max_epochs 30 --rnn_size 2400 --self_critical_after 0 --seq_per_img 1 --start_from checkpoints/conceptual_base_on_att2in/ --use_cider --use_slor
 
 python train.py --caption_model att2in2 --input_json data/cocotalk_with_cc_vocab_rm_8_same_order_for_self_critical.json --input_fc_dir /srv/share2/sgondala/tmp/trainval_36/python3_stuff/trainval_resnet101_faster_rcnn_genome_36.tsv --input_att_dir /srv/share2/sgondala/tmp/trainval_36/python3_stuff/trainval_resnet101_faster_rcnn_genome_36.tsv --input_label data/cocotalk_with_cc_vocab.h5 --batch_size 50 --learning_rate 2e-5 --learning_rate_decay_start 0 --scheduled_sampling_start 0 --checkpoint_path checkpoints/coco_sc_on_exp1_cider_and_slor_2e5/ --save_checkpoint_every 200 --val_images_use 5000 --max_epochs 5 --rnn_size 2400 --self_critical_after 0  --seq_per_img 1 --start_from checkpoints/coco_on_cc_rm_8_exp_1_3e5/ --use_cider --use_slor
+
+
+Coco eval 
+
+python eval.py --model checkpoints/coco_sc_on_exp1_cider_and_slor_2e5/model-400.pth --infos_path checkpoints/coco_sc_on_exp1_cider_and_slor_2e5/infos_-400.pkl --num_images -1 --input_fc_dir /srv/share2/sgondala/tmp/trainval_36/trainval_resnet101_faster_rcnn_genome_36.tsv --input_att_dir /srv/share2/sgondala/tmp/trainval_36/trainval_resnet101_faster_rcnn_genome_36.tsv --input_box_dir /srv/share2/sgondala/tmp/trainval_36/trainval_resnet101_faster_rcnn_genome_36.tsv --input_json data/cocotalk_with_cc_vocab_rm_8_same_order_for_self_critical.json --split train --out_file_path eval_results/coco_sc_on_exp1_cider_and_slor_2e5_400

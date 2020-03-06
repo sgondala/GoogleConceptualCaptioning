@@ -74,13 +74,13 @@ def get_vifidel_rewards(greedy_captions, gen_captions, ground_truth_annotations,
     for entry in gen_captions:
         image_id = entry['image_id']
         caption = entry['caption']
-        gen_vifidel_scores.append(get_vifidel_score(glove_embedding, glove_word_to_ix, ground_truth_annotations[image_id], caption))
+        gen_vifidel_scores.append(get_vifidel_score(glove_embedding, glove_word_to_ix, ground_truth_annotations[str(image_id)], caption))
 
     greedy_vifidel_scores = []
     for entry in greedy_captions:
         image_id = entry['image_id']
         caption = entry['caption']
-        greedy_vifidel_scores.append(get_vifidel_score(glove_embedding, glove_word_to_ix, ground_truth_annotations[image_id], caption))
+        greedy_vifidel_scores.append(get_vifidel_score(glove_embedding, glove_word_to_ix, ground_truth_annotations[str(image_id)], caption))
     
     gen_vifidel_scores = clip_vifidel_scores(np.array(gen_vifidel_scores))
     greedy_vifidel_scores = clip_vifidel_scores(np.array(greedy_vifidel_scores))
