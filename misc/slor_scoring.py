@@ -48,7 +48,7 @@ def get_slor_rewards(greedy_captions, gen_captions, unigram_prob_dict, language_
     gen_captions_log_probabilities = [get_log_probability(language_model_tokenizer, language_model, caption) for caption in gen_captions_list]
     
     greedy_slor_scores = [get_slor_score(unigram_prob_dict, greedy_captions_log_probabilities[i], greedy_captions_list[i]) for i in range(len(greedy_captions_list))]
-    gen_slor_scores = [get_slor_score(unigram_prob_dict, gen_captions_log_probabilities[i], gen_captions_list[i]) for i in range(len(greedy_captions_list))]
+    gen_slor_scores = [get_slor_score(unigram_prob_dict, gen_captions_log_probabilities[i], gen_captions_list[i]) for i in range(len(gen_captions_list))]
 
     greedy_slor_scores = clip_slor_scores(np.array(greedy_slor_scores))
     gen_slor_scores = clip_slor_scores(np.array(gen_slor_scores))

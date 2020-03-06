@@ -102,3 +102,8 @@ Out - nocaps_conceptual_base_with_coco_finetune_1000_images_only_ascii.json
 2. Get cider scores for nocaps
 Cider - nocaps_cider_scores.json
 3. Test on nocaps
+
+
+Train self critical coco - cider and slor
+
+python train.py --caption_model att2in2 --input_json data/cocotalk_with_cc_vocab_rm_8_same_order_for_self_critical.json --input_fc_dir /srv/share2/sgondala/tmp/trainval_36/python3_stuff/trainval_resnet101_faster_rcnn_genome_36.tsv --input_att_dir /srv/share2/sgondala/tmp/trainval_36/python3_stuff/trainval_resnet101_faster_rcnn_genome_36.tsv --input_label data/cocotalk_with_cc_vocab.h5 --batch_size 50 --learning_rate 5e-5 --learning_rate_decay_start 0 --scheduled_sampling_start 0 --checkpoint_path checkpoints/coco_sc_on_exp2_5e5_vilbert_10 --save_checkpoint_every 100 --val_images_use 5000 --max_epochs 5 --rnn_size 2400 --self_critical_after 0  --seq_per_img 1 --start_from checkpoints/coco_on_cc_rm_8_exp_2_15e5/ --use_cider --use_slor

@@ -172,7 +172,7 @@ def parse_opt():
                     help='')
 
     # CIDEr scores
-    parser.add_argument('--cider_model', type=str, default=None)
+    parser.add_argument('--cider_model', type=str, default='../vilbert_beta/checkpoints/coco_minus_8_no_random/pytorch_model_10.bin')
     parser.add_argument('--config_file', type=str, default='config/bert_base_6layer_6conect.json')
     parser.add_argument('--use_cider', action='store_true')
 
