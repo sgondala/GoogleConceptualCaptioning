@@ -1,54 +1,23 @@
-import numpy as np
 import torch
 from nltk import word_tokenize
+import numpy as np
 
 PUNCTUATIONS = ["''", "'", "``", "`", "(", ")", "{", "}" , ".", "?", "!", ",", ":", "-", "--", "...", ";", '$']
 
-def get_log_probability(batch_caption, language_model_tokenizer, language_model):
-    batch_tokens = [language_model_tokenizer.convert_tokens_to_ids(
-        language_model_tokenizer.tokenize(x, add_prefix_space=True))
-        for x in batch_caption]
-
-    # add BOS and EOS
-    tokenize_input = [[language_model_tokenizer.bos_token_id] + x + [language_model_tokenizer.eos_token_id]
-            for x in batch_tokens]
-    mask = []
-    for sentence in tokenize_input:
-        curr_mask = [1]*len(sentence) + [0] * (20-len(sentence))
-        mask.append(curr_mask)
-    mask = torch.FloatTensor(mask)
-    for i in range(len(tokenize_input)):
-        tokenize_input[i] = tokenize_input[i][: 20]
-        tokenize_input[i].extend([language_model_tokenizer.eos_token_id] * (20 - len(tokenize_input[i]))) 
-    tokenize_input = torch.LongTensor(tokenize_input)
+def get_log_probability(tokenizer, model, caption):
+    tokenize_input = tokenizer.tokenize(caption)
+    # 50256 is the token_id for <|endoftext|>
+    tensor_input = torch.tensor([[tokenizer.bos_token_id] + tokenizer.convert_tokens_to_ids(tokenize_input) + [tokenizer.eos_token_id]])
     with torch.no_grad():
-        outputs = language_model(tokenize_input, labels=tokenize_input, attention_mask = mask)
+        outputs = model(tensor_input, labels=tensor_input)
         _, logits = outputs[:2]
-        
-    batch_lp = []
-    for index in range(len(tokenize_input)):
-        lp = 0.0
-        for j in range(len(tokenize_input[index])):
-            if mask[index][j]:
-                masked_index = j
-                predicted_score = logits[index][masked_index]
-                predicted_prob = torch.nn.functional.softmax(predicted_score)
-                lp += np.log(predicted_prob[language_model_tokenizer.convert_tokens_to_ids([tokenize_input[index][j]])[0]])
-        batch_lp.append(lp)
-    return batch_lp
-
-# def get_slor_score(unigram_prob_dict, logprob, caption):
-#     # TODO: Update with batch SLOR
-#     uni = 0.0
-#     caption = caption.strip('.')
-#     for w in word_tokenize(caption):
-#         if not w.lower()[-1].isalpha():
-#             w = w.lower()[:-1]
-#         if w.lower() not in unigram_prob_dict.keys():
-#             return -1
-#         uni += np.log(unigram_prob_dict[w.lower()])
-#     n = len(caption.split())
-#     return ((logprob - uni) / n)
+    lp = 0.0
+    for i in range(len(tokenize_input)):
+        masked_index = i
+        predicted_score = logits[0, masked_index]
+        predicted_prob = torch.nn.functional.softmax(predicted_score)
+        lp += np.log(predicted_prob[tokenizer.convert_tokens_to_ids([tokenize_input[i]])[0]])
+    return float(lp)
 
 def get_slor_score(unigram_prob_dict, logprob, caption):
     caption_tokens = word_tokenize(caption)
@@ -56,11 +25,11 @@ def get_slor_score(unigram_prob_dict, logprob, caption):
 
     curr_uni = 0.0
     for token in caption_tokens:
-        if token not in unigram_prob_dict.keys():
-            return -1 ## change this handling of oov?
-        curr_uni += np.log(unigram_prob_dict[token])
+        token_prob = 1e-10
+        if token in unigram_prob_dict:
+            token_prob = unigram_prob_dict[token]
+        curr_uni += np.log(token_prob)
     n = len(caption.split())
-
     return ((logprob - curr_uni) / n)
 
 def clip_slor_scores(slor_scores):
@@ -75,11 +44,14 @@ def get_slor_rewards(greedy_captions, gen_captions, unigram_prob_dict, language_
     greedy_captions_list = [entry['caption'] for entry in greedy_captions]
     gen_captions_list = [entry['caption'] for entry in gen_captions]
     
-    greedy_captions_log_probabilities = get_log_probability(greedy_captions_list, language_model_tokenizer, language_model)
-    gen_captions_log_probabilities = get_log_probability(gen_captions_list, language_model_tokenizer, language_model)
+    greedy_captions_log_probabilities = [get_log_probability(language_model_tokenizer, language_model, caption) for caption in greedy_captions_list]
+    gen_captions_log_probabilities = [get_log_probability(language_model_tokenizer, language_model, caption) for caption in gen_captions_list]
     
-    greedy_slor_scores = clip_slor_scores(get_slor_score(unigram_prob_dict, greedy_captions_log_probabilities, greedy_captions_list))
-    gen_slor_scores = clip_slor_scores(get_slor_score(unigram_prob_dict, gen_captions_log_probabilities, gen_captions_list))
+    greedy_slor_scores = [get_slor_score(unigram_prob_dict, greedy_captions_log_probabilities[i], greedy_captions_list[i]) for i in range(len(greedy_captions_list))]
+    gen_slor_scores = [get_slor_score(unigram_prob_dict, gen_captions_log_probabilities[i], gen_captions_list[i]) for i in range(len(greedy_captions_list))]
+
+    greedy_slor_scores = clip_slor_scores(np.array(greedy_slor_scores))
+    gen_slor_scores = clip_slor_scores(np.array(gen_slor_scores))
     
     assert len(greedy_slor_scores) == len(gen_slor_scores)
     

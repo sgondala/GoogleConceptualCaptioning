@@ -177,7 +177,7 @@ def parse_opt():
     parser.add_argument('--use_cider', action='store_true')
 
     # Solr scores
-    parser.add_argument('--unigram_prob_file', type=str, default='None')
+    parser.add_argument('--unigram_prob_file', type=str, default='data/unigram_prob_cc.json')
     parser.add_argument('--use_slor', action='store_true')
 
     # Vifidel scores

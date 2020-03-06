@@ -60,10 +60,10 @@ class LossWrapper(torch.nn.Module):
                     slor_reward = get_slor_rewards(greedy_captions, gen_captions, self.unigram_prob_dict, self.language_model_tokenizer, self.language_model, length_of_output)
                     assert slor_reward.shape == reward.shape
                     reward += slor_reward
-                if self.opt.use_vifidel:
-                    vifidel_reward = get_vifidel_rewards(greedy_captions, gen_captions, self.unigram_prob_dict, self.language_model_tokenizer, self.language_model, length_of_output)
-                    assert vifidel_reward.shape == reward.shape
-                    reward += vifidel_reward
+                # if self.opt.use_vifidel:
+                #     vifidel_reward = get_vifidel_rewards(greedy_captions, gen_captions, self.unigram_prob_dict, self.language_model_tokenizer, self.language_model, length_of_output)
+                #     assert vifidel_reward.shape == reward.shape
+                #     reward += vifidel_reward
 
             reward = torch.from_numpy(reward).float().to(gen_result.device)
             out['reward'] = reward[:,0].mean()
