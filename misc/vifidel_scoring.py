@@ -62,5 +62,37 @@ def get_vifidel_score(word_embedding, word_to_index, ground_truth_annotation, ca
 
     return score
 
-def get_vifidel_rewards(greedy_captions, gen_captions, ground_truth_annotations, length_of_output):
-   pass 
+def clip_vifidel_scores(vifidel_scores):
+    scores = np.minimum(vifidel_scores, 0.9)
+    scores = np.maximum(scores, 0.3)
+    scores -= 0.3
+    scores = scores / 0.6
+    return scores
+
+def get_vifidel_rewards(greedy_captions, gen_captions, ground_truth_annotations, glove_embedding, glove_word_to_ix, length_of_output):
+    gen_vifidel_scores = []
+    for entry in gen_captions:
+        image_id = entry['image_id']
+        caption = entry['caption']
+        gen_vifidel_scores.append(get_vifidel_score(glove_embedding, glove_word_to_ix, ground_truth_annotations[image_id], caption))
+
+    greedy_vifidel_scores = []
+    for entry in greedy_captions:
+        image_id = entry['image_id']
+        caption = entry['caption']
+        greedy_vifidel_scores.append(get_vifidel_score(glove_embedding, glove_word_to_ix, ground_truth_annotations[image_id], caption))
+    
+    gen_vifidel_scores = clip_vifidel_scores(np.array(gen_vifidel_scores))
+    greedy_vifidel_scores = clip_vifidel_scores(np.array(greedy_vifidel_scores))
+
+    assert len(gen_vifidel_scores) == len(greedy_vifidel_scores)
+    
+    scores = gen_vifidel_scores - greedy_vifidel_scores
+    rewards = np.repeat(scores[:, np.newaxis], length_of_output, 1)
+    return rewards
+
+
+
+
+
+   

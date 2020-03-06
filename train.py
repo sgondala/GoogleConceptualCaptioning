@@ -101,7 +101,7 @@ def train(opt):
     unigram_prob_dict = None
 
     glove_embedding = None
-    glove_ix_to_word = None
+    glove_word_to_ix = None
     ground_truth_object_annotations = None
 
     initial_cider_model_weights = []
@@ -146,10 +146,10 @@ def train(opt):
         # VIFIDEL
         if opt.use_vifidel:   
             glove_embedding = nn.Embedding.from_pretrained(torch.load(opt.glove_vectors), freeze=True)
-            glove_ix_to_word = json.load(open(opt.glove_ix_to_word, 'r'))
+            glove_word_to_ix = json.load(open(opt.glove_word_to_ix, 'r'))
             ground_truth_object_annotations = json.load(open(opt.ground_truth_object_annotations, 'r'))
 
-    lw_model = LossWrapper(model, opt, vocab, cider_dataset, cider_model, open_gpt_model, open_gpt_tokenizer, unigram_prob_dict).cuda()
+    lw_model = LossWrapper(model, opt, vocab, cider_dataset, cider_model, open_gpt_model, open_gpt_tokenizer, unigram_prob_dict, glove_embedding, glove_word_to_ix, ground_truth_object_annotations).cuda()
     
     dp_lw_model = torch.nn.DataParallel(lw_model)
 

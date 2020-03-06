@@ -8,7 +8,7 @@ from misc.cider_scoring import get_self_critical_cider_reward_using_model
 from misc.vifidel_scoring import get_vifidel_rewards
 
 class LossWrapper(torch.nn.Module):
-    def __init__(self, model, opt, ix_to_word=None, cider_dataset=None, cider_model=None, language_model=None, language_model_tokenizer = None, unigram_prob_dict=None):
+    def __init__(self, model, opt, ix_to_word=None, cider_dataset=None, cider_model=None, language_model=None, language_model_tokenizer = None, unigram_prob_dict=None, glove_embedding=None, glove_word_to_ix=None, ground_truth_object_annotations=None):
         super(LossWrapper, self).__init__()
         self.opt = opt
         self.model = model
@@ -26,6 +26,9 @@ class LossWrapper(torch.nn.Module):
         self.language_model = language_model
         self.language_model_tokenizer = language_model_tokenizer
         self.unigram_prob_dict = unigram_prob_dict
+        self.glove_embedding = glove_embedding
+        self.glove_word_to_ix = glove_word_to_ix
+        self.ground_truth_object_annotations = ground_truth_object_annotations
 
     def forward(self, fc_feats, att_feats, labels, masks, att_masks, gts, gt_indices,
                 sc_flag, struc_flag, drop_worst_flag, image_ids):
@@ -60,10 +63,10 @@ class LossWrapper(torch.nn.Module):
                     slor_reward = get_slor_rewards(greedy_captions, gen_captions, self.unigram_prob_dict, self.language_model_tokenizer, self.language_model, length_of_output)
                     assert slor_reward.shape == reward.shape
                     reward += slor_reward
-                # if self.opt.use_vifidel:
-                #     vifidel_reward = get_vifidel_rewards(greedy_captions, gen_captions, self.unigram_prob_dict, self.language_model_tokenizer, self.language_model, length_of_output)
-                #     assert vifidel_reward.shape == reward.shape
-                #     reward += vifidel_reward
+                if self.opt.use_vifidel:
+                    vifidel_reward = get_vifidel_rewards(greedy_captions, gen_captions, self.ground_truth_object_annotations, self.glove_embedding, self.glove_word_to_ix, length_of_output)
+                    assert vifidel_reward.shape == reward.shape
+                    reward += vifidel_reward
 
             reward = torch.from_numpy(reward).float().to(gen_result.device)
             out['reward'] = reward[:,0].mean()
