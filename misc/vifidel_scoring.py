@@ -46,7 +46,7 @@ def get_vifidel_score(word_embedding, word_to_index, ground_truth_annotation, ca
     distance_matrix = euclidean_distances(wvoc)
 
     if np.sum(distance_matrix) == 0.0:
-        return float('inf')
+        return 1
 
     v_obj = v_obj.astype(np.double)
     v_desc = v_desc.astype(np.double)
@@ -61,3 +61,6 @@ def get_vifidel_score(word_embedding, word_to_index, ground_truth_annotation, ca
     score = math.exp(-score)
 
     return score
+
+def get_vifidel_rewards(greedy_captions, gen_captions, ground_truth_annotations, length_of_output):
+    

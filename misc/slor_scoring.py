@@ -2,6 +2,8 @@ import numpy as np
 import torch
 from nltk import word_tokenize
 
+PUNCTUATIONS = ["''", "'", "``", "`", "(", ")", "{", "}" , ".", "?", "!", ",", ":", "-", "--", "...", ";", '$']
+
 def get_log_probability(batch_caption, language_model_tokenizer, language_model):
     batch_tokens = [language_model_tokenizer.convert_tokens_to_ids(
         language_model_tokenizer.tokenize(x, add_prefix_space=True))
@@ -35,18 +37,31 @@ def get_log_probability(batch_caption, language_model_tokenizer, language_model)
         batch_lp.append(lp)
     return batch_lp
 
+# def get_slor_score(unigram_prob_dict, logprob, caption):
+#     # TODO: Update with batch SLOR
+#     uni = 0.0
+#     caption = caption.strip('.')
+#     for w in word_tokenize(caption):
+#         if not w.lower()[-1].isalpha():
+#             w = w.lower()[:-1]
+#         if w.lower() not in unigram_prob_dict.keys():
+#             return -1
+#         uni += np.log(unigram_prob_dict[w.lower()])
+#     n = len(caption.split())
+#     return ((logprob - uni) / n)
+
 def get_slor_score(unigram_prob_dict, logprob, caption):
-    # TODO: Update with batch SLOR
-    uni = 0.0
-    caption = caption.strip('.')
-    for w in word_tokenize(caption):
-        if not w.lower()[-1].isalpha():
-            w = w.lower()[:-1]
-        if w.lower() not in unigram_prob_dict.keys():
-            return -1
-        uni += np.log(unigram_prob_dict[w.lower()])
+    caption_tokens = word_tokenize(caption)
+    caption_tokens = [ct.lower() for ct in caption_tokens if ct not in PUNCTUATIONS]
+
+    curr_uni = 0.0
+    for token in caption_tokens:
+        if token not in unigram_prob_dict.keys():
+            return -1 ## change this handling of oov?
+        curr_uni += np.log(unigram_prob_dict[token])
     n = len(caption.split())
-    return ((logprob - uni) / n)
+
+    return ((logprob - curr_uni) / n)
 
 def clip_slor_scores(slor_scores):
     # Convert np array from -3 to 4 to 0 and 2

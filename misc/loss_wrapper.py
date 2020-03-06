@@ -5,6 +5,7 @@ from misc.rewards import init_scorer, get_self_critical_reward
 from misc.utils import decode_sequence_to_dict
 from misc.slor_scoring import get_slor_rewards
 from misc.cider_scoring import get_self_critical_cider_reward_using_model
+from misc.vifidel_scoring import get_vifidel_rewards
 
 class LossWrapper(torch.nn.Module):
     def __init__(self, model, opt, ix_to_word=None, cider_dataset=None, cider_model=None, language_model=None, language_model_tokenizer = None, unigram_prob_dict=None):
@@ -57,7 +58,12 @@ class LossWrapper(torch.nn.Module):
                     reward += cider_reward
                 if self.opt.use_slor:
                     slor_reward = get_slor_rewards(greedy_captions, gen_captions, self.unigram_prob_dict, self.language_model_tokenizer, self.language_model, length_of_output)
+                    assert slor_reward.shape == reward.shape
                     reward += slor_reward
+                if self.opt.use_vifidel:
+                    vifidel_reward = get_vifidel_rewards(greedy_captions, gen_captions, self.unigram_prob_dict, self.language_model_tokenizer, self.language_model, length_of_output)
+                    assert vifidel_reward.shape == reward.shape
+                    reward += vifidel_reward
 
             reward = torch.from_numpy(reward).float().to(gen_result.device)
             out['reward'] = reward[:,0].mean()
