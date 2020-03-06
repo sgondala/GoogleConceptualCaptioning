@@ -6,8 +6,10 @@
 *.json
 *.zip
 *tfevents*
+out
 cider/
 coco-caption/
 UNNECESARY/
 data/
 model_train_outputs/
+.vector_cache/

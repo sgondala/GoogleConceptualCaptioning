@@ -9,14 +9,14 @@ def get_log_probability(tokenizer, model, caption):
     # 50256 is the token_id for <|endoftext|>
     tensor_input = torch.tensor([[tokenizer.bos_token_id] + tokenizer.convert_tokens_to_ids(tokenize_input) + [tokenizer.eos_token_id]])
     with torch.no_grad():
-        outputs = model(tensor_input, labels=tensor_input)
+        outputs = model(tensor_input.cuda(), labels=tensor_input.cuda())
         _, logits = outputs[:2]
     lp = 0.0
     for i in range(len(tokenize_input)):
         masked_index = i
         predicted_score = logits[0, masked_index]
         predicted_prob = torch.nn.functional.softmax(predicted_score)
-        lp += np.log(predicted_prob[tokenizer.convert_tokens_to_ids([tokenize_input[i]])[0]])
+        lp += np.log(predicted_prob[tokenizer.convert_tokens_to_ids([tokenize_input[i]])[0]].cpu())
     return float(lp)
 
 def get_slor_score(unigram_prob_dict, logprob, caption):
@@ -29,7 +29,10 @@ def get_slor_score(unigram_prob_dict, logprob, caption):
         if token in unigram_prob_dict:
             token_prob = unigram_prob_dict[token]
         curr_uni += np.log(token_prob)
-    n = len(caption.split())
+    n = len(caption_tokens)
+    if n == 0:
+        print("Caption: ", caption)
+        n = 1
     return ((logprob - curr_uni) / n)
 
 def clip_slor_scores(slor_scores):

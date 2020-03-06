@@ -107,9 +107,10 @@ def train(opt):
     initial_cider_model_weights = []
     final_cider_model_weights = []
 
-    if opt.self_critical_after != -1 and opt.use_ref_caps:
+    if opt.self_critical_after != -1 and not opt.use_ref_caps:
         # CIDEr
         if opt.use_cider:
+            print("Using cider")
             from vilbert.vilbert import BertConfig
             from vilbert.vilbert import VILBertForVLTasks
 
@@ -117,6 +118,7 @@ def train(opt):
 
             from pytorch_pretrained_bert.tokenization import BertTokenizer
 
+            config = BertConfig.from_json_file(opt.config_file)
             cider_model = VILBertForVLTasks.from_pretrained(opt.cider_model, config, num_labels=1, default_gpu=True)
             cider_model.cuda()
             cider_model.eval()
@@ -125,12 +127,12 @@ def train(opt):
 
             initial_cider_model_weights = list(cider_model.parameters())
 
-            config = BertConfig.from_json_file(opt.config_file)
             tokenizer = BertTokenizer.from_pretrained('bert-base-uncased', do_lower_case=True)
             cider_dataset = CiderDataset(None, opt.input_fc_dir, tokenizer)
 
         # SLOR
         if opt.use_slor:
+            print("Using slor")
             from transformers import GPT2Tokenizer, GPT2LMHeadModel
             open_gpt_tokenizer = GPT2Tokenizer.from_pretrained('gpt2')
             open_gpt_model = GPT2LMHeadModel.from_pretrained('gpt2')
@@ -207,7 +209,7 @@ def train(opt):
                 # If start self critical training
                 if opt.self_critical_after != -1 and epoch >= opt.self_critical_after:
                     sc_flag = True
-                    if opt.use_model_for_sc_train == 0:
+                    if opt.use_ref_caps:
                         init_scorer(opt.cached_tokens)
                 else:
                     sc_flag = False

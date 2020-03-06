@@ -63,4 +63,4 @@ def get_vifidel_score(word_embedding, word_to_index, ground_truth_annotation, ca
     return score
 
 def get_vifidel_rewards(greedy_captions, gen_captions, ground_truth_annotations, length_of_output):
-    
+   pass 
