@@ -11,6 +11,7 @@ import os
 import math
 from sklearn.feature_extraction.text import TfidfVectorizer
 from nltk import word_tokenize
+import torch
 
 def get_vifidel_score(word_embedding, word_to_index, ground_truth_annotation, caption):
     '''
@@ -41,7 +42,8 @@ def get_vifidel_score(word_embedding, word_to_index, ground_truth_annotation, ca
     v_obj = v_obj.toarray().ravel()
     v_desc = v_desc.toarray().ravel()
     temp = vc.get_feature_names()
-    wvoc = word_embedding[[word_to_index[w] for w in temp]]
+    indices = torch.Tensor([word_to_index[w] for w in temp]).long()
+    wvoc = word_embedding(indices)
 
     distance_matrix = euclidean_distances(wvoc)
 
@@ -51,6 +53,11 @@ def get_vifidel_score(word_embedding, word_to_index, ground_truth_annotation, ca
     v_obj = v_obj.astype(np.double)
     v_desc = v_desc.astype(np.double)
 
+    if v_obj.sum() == 0:
+        return 0
+    if v_desc.sum() == 0:
+        return 0
+ 
     v_obj /= v_obj.sum()
     v_desc /= v_desc.sum()
     distance_matrix = distance_matrix.astype(np.double)
@@ -71,17 +78,20 @@ def clip_vifidel_scores(vifidel_scores):
 
 def get_vifidel_rewards(greedy_captions, gen_captions, ground_truth_annotations, glove_embedding, glove_word_to_ix, length_of_output):
     gen_vifidel_scores = []
+    print(gen_captions)
     for entry in gen_captions:
-        image_id = entry['image_id']
+        image_id = entry['image_id'].item()
         caption = entry['caption']
-        gen_vifidel_scores.append(get_vifidel_score(glove_embedding, glove_word_to_ix, ground_truth_annotations[str(image_id)], caption))
+        gen_vifidel_scores.append(get_vifidel_score(glove_embedding.cpu(), glove_word_to_ix, ground_truth_annotations.get(str(image_id), ""), caption))
 
     greedy_vifidel_scores = []
     for entry in greedy_captions:
-        image_id = entry['image_id']
+        image_id = entry['image_id'].item()
         caption = entry['caption']
-        greedy_vifidel_scores.append(get_vifidel_score(glove_embedding, glove_word_to_ix, ground_truth_annotations[str(image_id)], caption))
+        greedy_vifidel_scores.append(get_vifidel_score(glove_embedding, glove_word_to_ix, ground_truth_annotations.get(str(image_id), ""), caption))
     
+    print(gen_vifidel_scores)
+    print(greedy_vifidel_scores)
     gen_vifidel_scores = clip_vifidel_scores(np.array(gen_vifidel_scores))
     greedy_vifidel_scores = clip_vifidel_scores(np.array(greedy_vifidel_scores))
 

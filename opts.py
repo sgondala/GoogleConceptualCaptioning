@@ -181,7 +181,7 @@ def parse_opt():
     parser.add_argument('--use_slor', action='store_true')
 
     # Vifidel scores
-    parser.add_argument('--glove_vector', type=str, default='data/glove_vectors.pt')
+    parser.add_argument('--glove_vectors', type=str, default='data/glove_vectors.pt')
     parser.add_argument('--glove_word_to_ix', type=str, default='data/glove_stoi.json')
     parser.add_argument('--ground_truth_object_annotations', type=str, default='data/coco_ground_truth_annotations.json')
     parser.add_argument('--use_vifidel', action='store_true')

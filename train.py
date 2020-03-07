@@ -247,6 +247,7 @@ def train(opt):
                 print(image_id_here)
                 print(decode_sequence(opt.vocab, np.array(data_here)))
             '''
+            print(iteration)
             model_out = dp_lw_model(fc_feats, att_feats, labels, masks, att_masks, data['gts'], torch.arange(0, len(data['gts'])), sc_flag, struc_flag, drop_worst_flag, image_ids)
 
             if not drop_worst_flag:
