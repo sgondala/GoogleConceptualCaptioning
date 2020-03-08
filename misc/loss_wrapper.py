@@ -77,7 +77,7 @@ class LossWrapper(torch.nn.Module):
             reward = torch.from_numpy(reward).float().to(gen_result.device)
             out['reward'] = reward[:,0].mean()
 
-            if self.opt.save_all_train_captions is not None:
+            if self.opt.save_all_train_captions:
                 out['gen_captions'] = gen_captions
                 out['greedy_captions'] = greedy_captions
 	

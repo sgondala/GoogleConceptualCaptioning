@@ -144,7 +144,8 @@ def train(opt):
             unigram_prob_dict = json.load(open(opt.unigram_prob_file, 'r'))
 
         # VIFIDEL
-        if opt.use_vifidel:   
+        if opt.use_vifidel:
+            print("Using vifidel")
             glove_embedding = nn.Embedding.from_pretrained(torch.load(opt.glove_vectors), freeze=True)
             glove_word_to_ix = json.load(open(opt.glove_word_to_ix, 'r'))
             ground_truth_object_annotations = json.load(open(opt.ground_truth_object_annotations, 'r'))
@@ -187,6 +188,10 @@ def train(opt):
         if histories:
             with open(os.path.join(opt.checkpoint_path, 'histories_'+opt.id+'%s.pkl' %(append)), 'wb') as f:
                 utils.pickle_dump(histories, f)
+
+
+    gen_captions_all = {}
+    greedy_captions_all = {}
 
     try:
         while True:
@@ -240,17 +245,6 @@ def train(opt):
             image_ids = data['image_ids']
             
             optimizer.zero_grad()
-            
-            # print(iteration)
-            # print("FC ", fc_feats)
-            # print("Att ", att_feats)
-            # print("Labels", labels)
-            # print("Mask", masks)
-            # print("Att amsk", att_masks)
-            # print("Gts", data['gts'])
-            # print("Gts2", torch.arange(0, len(data['gts'])))
-            # print("Imageid", image_ids)
-            # print("model", dp_lw_model)
             model_out = dp_lw_model(fc_feats, att_feats, labels, masks, att_masks, data['gts'], torch.arange(0, len(data['gts'])), sc_flag, struc_flag, drop_worst_flag, image_ids)
 
             if not drop_worst_flag:
@@ -304,6 +298,11 @@ def train(opt):
                     add_summary_value(tb_summary_writer, 'avg_gen_slor', model_out.get('average_gen_slor', 0), iteration)
                     add_summary_value(tb_summary_writer, 'avg_greedy_vifidel', model_out.get('average_greedy_vifidel', 0), iteration)
                     add_summary_value(tb_summary_writer, 'avg_gen_vifidel', model_out.get('average_gen_vifidel', 0), iteration)
+
+                    if opt.save_all_train_captions:
+                        gen_captions_all[iteration] = model_out['gen_captions']
+                        greedy_captions_all[iteration] = model_out['greedy_captions']
+
                 elif struc_flag:
                     add_summary_value(tb_summary_writer, 'lm_loss', model_out['lm_loss'].mean().item(), iteration)
                     add_summary_value(tb_summary_writer, 'struc_loss', model_out['struc_loss'].mean().item(), iteration)
@@ -375,7 +374,11 @@ def train(opt):
             final_cider_model_weights = list(cider_model.parameters())
             assert initial_cider_model_weights == final_cider_model_weights
 
-        
+        if opt.save_all_train_captions:
+            final_dict = {}
+            final_dict['gen_captions'] = gen_captions_all
+            final_dict['greedy_captions'] = greedy_captions_all
+            json.dump(final_dict, open(opt.checkpoint_path + '/captions_all.json', 'w'))
 
     except (RuntimeError, KeyboardInterrupt):
         print('Save ckpt on exception ...')
@@ -383,7 +386,6 @@ def train(opt):
         print('Save ckpt done.')
         stack_trace = traceback.format_exc()
         print(stack_trace)
-
 
 opt = opts.parse_opt()
 train(opt)
