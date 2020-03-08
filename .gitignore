@@ -13,3 +13,4 @@ UNNECESARY/
 data/
 model_train_outputs/
 .vector_cache/
+coco-caption-old/*

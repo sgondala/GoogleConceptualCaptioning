@@ -240,14 +240,17 @@ def train(opt):
             image_ids = data['image_ids']
             
             optimizer.zero_grad()
-            '''
-            for i in range(len(image_ids)):
-                data_here = np.array(data['gts'][i])
-                image_id_here = image_ids[i]
-                print(image_id_here)
-                print(decode_sequence(opt.vocab, np.array(data_here)))
-            '''
-            print(iteration)
+            
+            # print(iteration)
+            # print("FC ", fc_feats)
+            # print("Att ", att_feats)
+            # print("Labels", labels)
+            # print("Mask", masks)
+            # print("Att amsk", att_masks)
+            # print("Gts", data['gts'])
+            # print("Gts2", torch.arange(0, len(data['gts'])))
+            # print("Imageid", image_ids)
+            # print("model", dp_lw_model)
             model_out = dp_lw_model(fc_feats, att_feats, labels, masks, att_masks, data['gts'], torch.arange(0, len(data['gts'])), sc_flag, struc_flag, drop_worst_flag, image_ids)
 
             if not drop_worst_flag:
@@ -295,6 +298,12 @@ def train(opt):
                 add_summary_value(tb_summary_writer, 'scheduled_sampling_prob', model.ss_prob, iteration)
                 if sc_flag:
                     add_summary_value(tb_summary_writer, 'avg_reward', model_out['reward'].mean(), iteration)
+                    add_summary_value(tb_summary_writer, 'avg_greedy_cider', model_out.get('average_greedy_cider', 0), iteration)
+                    add_summary_value(tb_summary_writer, 'avg_gen_cider', model_out.get('average_gen_cider', 0), iteration)
+                    add_summary_value(tb_summary_writer, 'avg_greedy_slor', model_out.get('average_greedy_slor', 0), iteration)
+                    add_summary_value(tb_summary_writer, 'avg_gen_slor', model_out.get('average_gen_slor', 0), iteration)
+                    add_summary_value(tb_summary_writer, 'avg_greedy_vifidel', model_out.get('average_greedy_vifidel', 0), iteration)
+                    add_summary_value(tb_summary_writer, 'avg_gen_vifidel', model_out.get('average_gen_vifidel', 0), iteration)
                 elif struc_flag:
                     add_summary_value(tb_summary_writer, 'lm_loss', model_out['lm_loss'].mean().item(), iteration)
                     add_summary_value(tb_summary_writer, 'struc_loss', model_out['struc_loss'].mean().item(), iteration)
@@ -365,6 +374,8 @@ def train(opt):
         if cider_model is not None:
             final_cider_model_weights = list(cider_model.parameters())
             assert initial_cider_model_weights == final_cider_model_weights
+
+        
 
     except (RuntimeError, KeyboardInterrupt):
         print('Save ckpt on exception ...')

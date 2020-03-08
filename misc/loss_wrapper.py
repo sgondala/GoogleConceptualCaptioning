@@ -56,20 +56,30 @@ class LossWrapper(torch.nn.Module):
                 reward = get_self_critical_reward(greedy_res, gts, gen_result, self.opt)
             else:
                 if self.opt.use_cider:
-                    cider_reward = get_self_critical_cider_reward_using_model(self.cider_dataset, self.cider_model, greedy_captions, gen_captions, self.opt, length_of_output)
+                    cider_reward, average_greedy_cider, average_gen_cider = get_self_critical_cider_reward_using_model(self.cider_dataset, self.cider_model, greedy_captions, gen_captions, self.opt, length_of_output)
                     assert cider_reward.shape == reward.shape
                     reward += cider_reward
+                    out['average_greedy_cider'] = average_greedy_cider
+                    out['average_gen_cider'] = average_gen_cider
                 if self.opt.use_slor:
-                    slor_reward = get_slor_rewards(greedy_captions, gen_captions, self.unigram_prob_dict, self.language_model_tokenizer, self.language_model, length_of_output)
+                    slor_reward, average_greedy_slor, average_gen_slor = get_slor_rewards(greedy_captions, gen_captions, self.unigram_prob_dict, self.language_model_tokenizer, self.language_model, length_of_output)
                     assert slor_reward.shape == reward.shape
                     reward += slor_reward
+                    out['average_greedy_slor'] = average_greedy_slor
+                    out['average_gen_slor'] = average_gen_slor
                 if self.opt.use_vifidel:
-                    vifidel_reward = get_vifidel_rewards(greedy_captions, gen_captions, self.ground_truth_object_annotations, self.glove_embedding, self.glove_word_to_ix, length_of_output)
+                    vifidel_reward, average_greedy_vifidel, average_gen_vifidel = get_vifidel_rewards(greedy_captions, gen_captions, self.ground_truth_object_annotations, self.glove_embedding, self.glove_word_to_ix, length_of_output)
                     assert vifidel_reward.shape == reward.shape
                     reward += vifidel_reward
+                    out['average_greedy_vifidel'] = average_greedy_vifidel
+                    out['average_gen_vifidel'] = average_gen_vifidel
 
             reward = torch.from_numpy(reward).float().to(gen_result.device)
             out['reward'] = reward[:,0].mean()
+
+            if self.opt.save_all_train_captions is not None:
+                out['gen_captions'] = gen_captions
+                out['greedy_captions'] = greedy_captions
 	
             loss = self.rl_crit(sample_logprobs, gen_result.data, reward, reduction=reduction)
 

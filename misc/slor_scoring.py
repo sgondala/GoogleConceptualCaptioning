@@ -15,7 +15,12 @@ def get_log_probability(tokenizer, model, caption):
     for i in range(len(tokenize_input)):
         masked_index = i
         predicted_score = logits[0, masked_index]
-        predicted_prob = torch.nn.functional.softmax(predicted_score)
+        assert len(predicted_score.shape) == 1, predicted_score.shape
+        # print("Predicted score ", predicted_score)
+        # print("Predicted score shape", predicted_score.shape)
+        predicted_prob = torch.nn.functional.softmax(predicted_score, dim=0)
+        # print("Predicted prob ", predicted_prob)
+        # print("predicted prob shape", predicted_prob.shape)
         lp += np.log(predicted_prob[tokenizer.convert_tokens_to_ids([tokenize_input[i]])[0]].cpu())
     return float(lp)
 
@@ -50,8 +55,11 @@ def get_slor_rewards(greedy_captions, gen_captions, unigram_prob_dict, language_
     greedy_captions_log_probabilities = [get_log_probability(language_model_tokenizer, language_model, caption) for caption in greedy_captions_list]
     gen_captions_log_probabilities = [get_log_probability(language_model_tokenizer, language_model, caption) for caption in gen_captions_list]
     
-    greedy_slor_scores = [get_slor_score(unigram_prob_dict, greedy_captions_log_probabilities[i], greedy_captions_list[i]) for i in range(len(greedy_captions_list))]
-    gen_slor_scores = [get_slor_score(unigram_prob_dict, gen_captions_log_probabilities[i], gen_captions_list[i]) for i in range(len(gen_captions_list))]
+    greedy_slor_scores = np.array([get_slor_score(unigram_prob_dict, greedy_captions_log_probabilities[i], greedy_captions_list[i]) for i in range(len(greedy_captions_list))])
+    gen_slor_scores = np.array([get_slor_score(unigram_prob_dict, gen_captions_log_probabilities[i], gen_captions_list[i]) for i in range(len(gen_captions_list))])
+
+    average_greedy = greedy_slor_scores.mean()
+    average_gen = gen_slor_scores.mean()
 
     greedy_slor_scores = clip_slor_scores(np.array(greedy_slor_scores))
     gen_slor_scores = clip_slor_scores(np.array(gen_slor_scores))
@@ -60,4 +68,4 @@ def get_slor_rewards(greedy_captions, gen_captions, unigram_prob_dict, language_
     
     scores = gen_slor_scores - greedy_slor_scores
     rewards = np.repeat(scores[:, np.newaxis], length_of_output, 1)
-    return rewards
+    return rewards, average_greedy, average_gen

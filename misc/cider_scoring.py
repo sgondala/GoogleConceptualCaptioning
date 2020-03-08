@@ -26,13 +26,17 @@ def get_single_cider_scores(cider_dataset, model):
 def get_self_critical_cider_reward_using_model(cider_dataset, model, captions_greedy, captions_gen, opt, length_of_output):    
     # Assuming captions is a mix of both
     cider_dataset.captions = captions_greedy
-    cider_greedy = clips_cider_scores(get_single_cider_scores(cider_dataset, model))
+    cider_greedy = get_single_cider_scores(cider_dataset, model)
+    average_greedy_cider = cider_greedy.mean()
+    cider_greedy = clips_cider_scores(cider_greedy)
 
     cider_dataset.captions = captions_gen
-    cider_gen = clips_cider_scores(get_single_cider_scores(cider_dataset, model))
+    cider_gen = get_single_cider_scores(cider_dataset, model)
+    average_gen_cider = cider_gen.mean()
+    cider_gen = clips_cider_scores(cider_gen)
 
     assert len(cider_gen) == len(cider_greedy)
     scores = (cider_gen - cider_greedy) * opt.cider_reward_weight
 
     rewards = np.repeat(scores[:, np.newaxis], length_of_output, 1)
-    return rewards
+    return rewards, average_greedy_cider, average_gen_cider

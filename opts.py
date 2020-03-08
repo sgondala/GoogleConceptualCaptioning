@@ -188,6 +188,7 @@ def parse_opt():
 
     # Other
     parser.add_argument('--use_ref_caps', action='store_true')
+    parser.add_argument('--save_all_train_captions', type=str, default=None)
 
     add_vse_options(parser)
 

@@ -35,17 +35,22 @@ def get_vifidel_score(word_embedding, word_to_index, ground_truth_annotation, ca
     for word in word_tokenize(caption):
         if word.lower() not in word_to_index:
             caption = caption.replace(word, '')
+    try:
+        vc = CountVectorizer(stop_words='english').fit([ground_truth_annotation, caption])
+    except ValueError:
+        print("Caption ", caption)
+        print("Ground truth ", ground_truth_annotation)
+        return 0
 
-    vc = CountVectorizer(stop_words='english').fit([ground_truth_annotation, caption])
     v_obj, v_desc = vc.transform([ground_truth_annotation, caption])
 
     v_obj = v_obj.toarray().ravel()
     v_desc = v_desc.toarray().ravel()
     temp = vc.get_feature_names()
-    indices = torch.Tensor([word_to_index[w] for w in temp]).long()
+    indices = torch.Tensor([word_to_index[w] for w in temp]).long().cuda()
     wvoc = word_embedding(indices)
 
-    distance_matrix = euclidean_distances(wvoc)
+    distance_matrix = euclidean_distances(wvoc.tolist())
 
     if np.sum(distance_matrix) == 0.0:
         return 1
@@ -78,11 +83,11 @@ def clip_vifidel_scores(vifidel_scores):
 
 def get_vifidel_rewards(greedy_captions, gen_captions, ground_truth_annotations, glove_embedding, glove_word_to_ix, length_of_output):
     gen_vifidel_scores = []
-    print(gen_captions)
+    
     for entry in gen_captions:
         image_id = entry['image_id'].item()
         caption = entry['caption']
-        gen_vifidel_scores.append(get_vifidel_score(glove_embedding.cpu(), glove_word_to_ix, ground_truth_annotations.get(str(image_id), ""), caption))
+        gen_vifidel_scores.append(get_vifidel_score(glove_embedding, glove_word_to_ix, ground_truth_annotations.get(str(image_id), ""), caption))
 
     greedy_vifidel_scores = []
     for entry in greedy_captions:
@@ -90,16 +95,21 @@ def get_vifidel_rewards(greedy_captions, gen_captions, ground_truth_annotations,
         caption = entry['caption']
         greedy_vifidel_scores.append(get_vifidel_score(glove_embedding, glove_word_to_ix, ground_truth_annotations.get(str(image_id), ""), caption))
     
-    print(gen_vifidel_scores)
-    print(greedy_vifidel_scores)
-    gen_vifidel_scores = clip_vifidel_scores(np.array(gen_vifidel_scores))
-    greedy_vifidel_scores = clip_vifidel_scores(np.array(greedy_vifidel_scores))
+    gen_vifidel_scores = np.array(gen_vifidel_scores)
+    greedy_vifidel_scores = np.array(greedy_vifidel_scores)
+
+    average_greedy_vifidel = greedy_vifidel_scores.mean()
+    average_gen_vifidel = gen_vifidel_scores.mean()
+
+    gen_vifidel_scores = clip_vifidel_scores(gen_vifidel_scores)
+    greedy_vifidel_scores = clip_vifidel_scores(greedy_vifidel_scores)
 
     assert len(gen_vifidel_scores) == len(greedy_vifidel_scores)
     
     scores = gen_vifidel_scores - greedy_vifidel_scores
     rewards = np.repeat(scores[:, np.newaxis], length_of_output, 1)
-    return rewards
+    
+    return rewards, average_greedy_vifidel, average_gen_vifidel
 
 
 
