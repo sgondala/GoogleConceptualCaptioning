@@ -3,15 +3,15 @@ import argparse
 def parse_opt():
     parser = argparse.ArgumentParser()
     # Data input settings
-    parser.add_argument('--input_json', type=str, default='data/coco.json',
+    parser.add_argument('--input_json', type=str, default='data/cocotalk_with_cc_vocab_rm_8_same_order_for_self_critical.json',
                     help='path to the json file containing additional info and vocab')
-    parser.add_argument('--input_fc_dir', type=str, default='data/cocotalk_fc',
+    parser.add_argument('--input_fc_dir', type=str, default='/srv/share2/sgondala/tmp/trainval_36/python3_stuff/trainval_resnet101_faster_rcnn_genome_36.tsv',
                     help='path to the directory containing the preprocessed fc feats')
-    parser.add_argument('--input_att_dir', type=str, default='data/cocotalk_att',
+    parser.add_argument('--input_att_dir', type=str, default='/srv/share2/sgondala/tmp/trainval_36/python3_stuff/trainval_resnet101_faster_rcnn_genome_36.tsv',
                     help='path to the directory containing the preprocessed att feats')
     parser.add_argument('--input_box_dir', type=str, default='data/cocotalk_box',
                     help='path to the directory containing the boxes of att feats')
-    parser.add_argument('--input_label_h5', type=str, default='data/coco_label.h5',
+    parser.add_argument('--input_label_h5', type=str, default='data/cocotalk_with_cc_vocab.h5',
                     help='path to the h5file containing the preprocessed dataset')
     parser.add_argument('--start_from', type=str, default=None,
                     help="""continue training from saved model at this path. Path must contain files saved by previous training process: 
@@ -24,9 +24,9 @@ def parse_opt():
                     help='Cached token file for calculating cider score during self critical training.')
 
     # Model settings
-    parser.add_argument('--caption_model', type=str, default="show_tell",
+    parser.add_argument('--caption_model', type=str, default="att2in2",
                     help='show_tell, show_attend_tell, all_img, fc, att2in, att2in2, att2all2, adaatt, adaattmo, topdown, stackatt, denseatt, transformer')
-    parser.add_argument('--rnn_size', type=int, default=512,
+    parser.add_argument('--rnn_size', type=int, default=2400,
                     help='size of the rnn in number of hidden nodes in each layer')
     parser.add_argument('--num_layers', type=int, default=1,
                     help='number of layers in the RNN')
@@ -84,9 +84,9 @@ def parse_opt():
     #Optimization: for the Language Model
     parser.add_argument('--optim', type=str, default='adam',
                     help='what update to use? rmsprop|sgd|sgdmom|adagrad|adam')
-    parser.add_argument('--learning_rate', type=float, default=4e-4,
+    parser.add_argument('--learning_rate', type=float, default=5e-5,
                     help='learning rate')
-    parser.add_argument('--learning_rate_decay_start', type=int, default=-1, 
+    parser.add_argument('--learning_rate_decay_start', type=int, default=0, 
                     help='at what iteration to start decaying learning rate? (-1 = dont) (in epoch)')
     parser.add_argument('--learning_rate_decay_every', type=int, default=3, 
                     help='every how many iterations thereafter to drop LR?(in epoch)')
@@ -112,7 +112,7 @@ def parse_opt():
     parser.add_argument('--reduce_on_plateau', action='store_true',
                     help='')
 
-    parser.add_argument('--scheduled_sampling_start', type=int, default=-1, 
+    parser.add_argument('--scheduled_sampling_start', type=int, default=0, 
                     help='at what iteration to start decay gt probability')
     parser.add_argument('--scheduled_sampling_increase_every', type=int, default=5, 
                     help='every how many iterations thereafter to gt probability')

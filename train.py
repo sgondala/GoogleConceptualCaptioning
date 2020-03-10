@@ -331,7 +331,7 @@ def train(opt):
                     greedy_captions_since_last_checkpoint += model_out['greedy_captions']
                     gen_captions_since_last_checkpoint += model_out['gen_captions']
 
-                    if opt.save_all_train_captions:
+                    if True:
                         gen_captions_all[iteration] = model_out['gen_captions']
                         greedy_captions_all[iteration] = model_out['greedy_captions']
 
@@ -375,12 +375,13 @@ def train(opt):
                 # Write validation result into summary
                 add_summary_value(tb_summary_writer, 'validation loss', val_loss, iteration)
                 if lang_stats is not None:
-                    for k, v in lang_stats.items():
-                        add_summary_value(tb_summary_writer, k, v, iteration)
+                    # for k, v in lang_stats.items():
+                    #     print(k, v)
+                    add_summary_value(tb_summary_writer, 'CIDEr', lang_stats['CIDEr'], iteration)
                 
                 if train_lang_stats is not None:
-                    for k, v in lang_stats.items():
-                        add_summary_value(tb_summary_writer, k + '_train', v, iteration)
+                    # for k, v in lang_stats.items():
+                    add_summary_value(tb_summary_writer, 'CIDEr_train', train_lang_stats['CIDEr'], iteration)
 
                 val_result_history[iteration] = {'loss': val_loss, 'lang_stats': lang_stats, 'predictions': predictions}
 
@@ -436,7 +437,7 @@ def train(opt):
             final_greedy_model_weights = list(model_greedy.parameters())
             assert initial_greedy_model_weights == final_greedy_model_weights
 
-        if opt.save_all_train_captions:
+        if True:
             final_dict = {}
             final_dict['gen_captions'] = gen_captions_all
             final_dict['greedy_captions'] = greedy_captions_all
