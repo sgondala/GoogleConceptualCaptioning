@@ -22,9 +22,9 @@ import misc.utils as utils
 from misc.rewards import init_scorer, get_self_critical_reward
 from misc.loss_wrapper import LossWrapper
 from misc.utils import decode_sequence
+from eval_utils import language_eval
 
-print("Imported all")
-
+# print("Imported all")
 try:
     import tensorboardX as tb
 except ImportError:
@@ -34,6 +34,17 @@ except ImportError:
 def add_summary_value(writer, key, value, iteration):
     if writer:
         writer.add_scalar(key, value, iteration)
+
+def eval_cider_and_append_values(predictions, writer, key, start_iteration, batch_size):
+    # TODO - This hardcodes to coco val. Take care
+    out = language_eval(None, predictions, None, {}, 'val')
+    cider_array = np.array(out['CIDErArary'])
+    
+    for i in range(len(cider_array) // batch_size + 1):
+        start_index = i*batch_size
+        end_index = i*batch_size + batch_size
+        cider_avg = cider_array[start_index:end_index].mean()
+        add_summary_value(writer, key, cider_avg, start_iteration + i)
 
 def train(opt):
     # Deal with feature things before anything
@@ -89,7 +100,19 @@ def train(opt):
     opt.vocab = loader.get_vocab()
     model = models.setup(opt).cuda()
     print(model.parameters)
+    
+    model_greedy = None
+    initial_greedy_model_weights = []
+    if opt.use_base_model_for_greedy:
+        model_greedy = models.setup(opt).cuda()
+        model_greedy.eval()
+        initial_greedy_model_weights = list(model_greedy.parameters())
+        for param in model_greedy.parameters():
+            param.requires_grad = False
+
     dp_model = torch.nn.DataParallel(model)
+    
+
     vocab = opt.vocab
     # del opt.vocab
 
@@ -150,7 +173,7 @@ def train(opt):
             glove_word_to_ix = json.load(open(opt.glove_word_to_ix, 'r'))
             ground_truth_object_annotations = json.load(open(opt.ground_truth_object_annotations, 'r'))
 
-    lw_model = LossWrapper(model, opt, vocab, cider_dataset, cider_model, open_gpt_model, open_gpt_tokenizer, unigram_prob_dict, glove_embedding, glove_word_to_ix, ground_truth_object_annotations).cuda()
+    lw_model = LossWrapper(model, opt, vocab, cider_dataset, cider_model, open_gpt_model, open_gpt_tokenizer, unigram_prob_dict, glove_embedding, glove_word_to_ix, ground_truth_object_annotations, model_greedy).cuda()
     
     dp_lw_model = torch.nn.DataParallel(lw_model)
 
@@ -192,6 +215,10 @@ def train(opt):
 
     gen_captions_all = {}
     greedy_captions_all = {}
+
+
+    greedy_captions_since_last_checkpoint = []
+    gen_captions_since_last_checkpoint = []
 
     try:
         while True:
@@ -298,6 +325,11 @@ def train(opt):
                     add_summary_value(tb_summary_writer, 'avg_gen_slor', model_out.get('average_gen_slor', 0), iteration)
                     add_summary_value(tb_summary_writer, 'avg_greedy_vifidel', model_out.get('average_greedy_vifidel', 0), iteration)
                     add_summary_value(tb_summary_writer, 'avg_gen_vifidel', model_out.get('average_gen_vifidel', 0), iteration)
+                    add_summary_value(tb_summary_writer, 'average_gen_cider_ground_truth', model_out.get('average_gen_cider_ground_truth', 0), iteration)
+                    add_summary_value(tb_summary_writer, 'average_greedy_cider_ground_truth', model_out.get('average_greedy_cider_ground_truth', 0), iteration)
+
+                    greedy_captions_since_last_checkpoint += model_out['greedy_captions']
+                    gen_captions_since_last_checkpoint += model_out['gen_captions']
 
                     if opt.save_all_train_captions:
                         gen_captions_all[iteration] = model_out['gen_captions']
@@ -318,27 +350,51 @@ def train(opt):
             infos['split_ix'] = loader.split_ix
             
             # make evaluation on validation set, and save model
-            if (iteration % opt.save_checkpoint_every == 0):
+            if (iteration % opt.save_checkpoint_every == 1):
                 print("Calculating validation score")
-                # eval model
+                
                 eval_kwargs = {'split': 'val',
                                 'dataset': opt.input_json}
                 eval_kwargs.update(vars(opt))
                 val_loss, predictions, lang_stats = eval_utils.eval_split(
                     dp_model, lw_model.crit, loader, eval_kwargs)
-                print("Validation score is ", val_loss)
 
+                # Rechecking on train data too
+                eval_kwargs_train = {'split': 'train',
+                                'dataset': opt.input_json}
+                eval_kwargs_train.update(vars(opt))
+                _, _, train_lang_stats = eval_utils.eval_split(
+                    dp_model, lw_model.crit, loader, eval_kwargs_train)
+                
                 if opt.reduce_on_plateau:
                     if 'CIDEr' in lang_stats:
                         optimizer.scheduler_step(-lang_stats['CIDEr'])
                     else:
                         optimizer.scheduler_step(val_loss)
+                
                 # Write validation result into summary
                 add_summary_value(tb_summary_writer, 'validation loss', val_loss, iteration)
                 if lang_stats is not None:
-                    for k,v in lang_stats.items():
+                    for k, v in lang_stats.items():
                         add_summary_value(tb_summary_writer, k, v, iteration)
+                
+                if train_lang_stats is not None:
+                    for k, v in lang_stats.items():
+                        add_summary_value(tb_summary_writer, k + '_train', v, iteration)
+
                 val_result_history[iteration] = {'loss': val_loss, 'lang_stats': lang_stats, 'predictions': predictions}
+
+                if iteration != 1:
+                    # Calculate actual cider values of previous iterations
+                    # Doing this here to take advantage of batching
+                    assert len(greedy_captions_since_last_checkpoint) = opt.save_checkpoint_every * opt.batch_size
+                    eval_cider_and_append_values(greedy_captions_since_last_checkpoint, tb_summary_writer, 'greedy_generated_captions_actual_cider_scores', iteration - opt.save_checkpoint_every, opt.batch_size)
+
+                    assert len(gen_captions_since_last_checkpoint) = opt.save_checkpoint_every * opt.batch_size
+                    eval_cider_and_append_values(gen_captions_since_last_checkpoint, tb_summary_writer, 'gen_generated_captions_actual_cider_scores', iteration - opt.save_checkpoint_every, opt.batch_size)
+
+                greedy_captions_since_last_checkpoint = []
+                gen_captions_since_last_checkpoint = []
 
                 # Save model if is improving on validation result
                 if opt.language_eval == 1:
@@ -373,6 +429,10 @@ def train(opt):
         if cider_model is not None:
             final_cider_model_weights = list(cider_model.parameters())
             assert initial_cider_model_weights == final_cider_model_weights
+        
+        if model_greedy is not None:
+            final_greedy_model_weights = list(model_greedy.parameters())
+            assert initial_greedy_model_weights == final_greedy_model_weights
 
         if opt.save_all_train_captions:
             final_dict = {}

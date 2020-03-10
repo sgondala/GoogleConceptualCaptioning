@@ -28,7 +28,7 @@ def count_bad(sen):
         return 0
 
 def language_eval(dataset, preds, preds_n, eval_kwargs, split):
-    model_id = eval_kwargs['id']
+    model_id = eval_kwargs.get('id', '')
     eval_oracle = eval_kwargs.get('eval_oracle', 0)
     
     import sys
@@ -48,8 +48,8 @@ def language_eval(dataset, preds, preds_n, eval_kwargs, split):
 
     # filter results to only those in MSCOCO validation set (will be about a third)
     preds_filt = [p for p in preds if p['image_id'] in valids]
-    mean_perplexity = sum([_['perplexity'] for _ in preds_filt]) / len(preds_filt)
-    mean_entropy = sum([_['entropy'] for _ in preds_filt]) / len(preds_filt)
+    # mean_perplexity = sum([_['perplexity'] for _ in preds_filt]) / len(preds_filt)
+    # mean_entropy = sum([_['entropy'] for _ in preds_filt]) / len(preds_filt)
     print('using %d/%d predictions' % (len(preds_filt), len(preds)))
     json.dump(preds_filt, open(cache_path, 'w')) # serialize to temporary json file. Sigh, COCO API...
 
@@ -62,35 +62,38 @@ def language_eval(dataset, preds, preds_n, eval_kwargs, split):
     out = {}
     for metric, score in cocoEval.eval.items():
         out[metric] = score
+    
+    out['CIDErArary'] = cocoEval.evalArray['CIDEr']
+    assert len(out['CIDErArary']) == len(preds)
     # Add mean perplexity
     # out['perplexity'] = mean_perplexity
     # out['entropy'] = mean_entropy
 
-    imgToEval = cocoEval.imgToEval
-    for k in list(imgToEval.values())[0]['SPICE'].keys():
-        if k != 'All':
-            out['SPICE_'+k] = np.array([v['SPICE'][k]['f'] for v in imgToEval.values()])
-            out['SPICE_'+k] = (out['SPICE_'+k][out['SPICE_'+k]==out['SPICE_'+k]]).mean()
-    for p in preds_filt:
-        image_id, caption = p['image_id'], p['caption']
-        imgToEval[image_id]['caption'] = caption
+    # imgToEval = cocoEval.imgToEval
+    # for k in list(imgToEval.values())[0]['SPICE'].keys():
+    #     if k != 'All':
+    #         out['SPICE_'+k] = np.array([v['SPICE'][k]['f'] for v in imgToEval.values()])
+    #         out['SPICE_'+k] = (out['SPICE_'+k][out['SPICE_'+k]==out['SPICE_'+k]]).mean()
+    # for p in preds_filt:
+    #     image_id, caption = p['image_id'], p['caption']
+    #     imgToEval[image_id]['caption'] = caption
 
-    if len(preds_n) > 0:
-        cache_path_n = os.path.join('eval_results/', '.cache_'+ model_id + '_' + split + '_n.json')
-        spice_n = eval_multi.eval_spice_n(preds_n, model_id, split)
-        out.update(spice_n['overall'])
-        div_stats = eval_multi.eval_div_stats(preds_n, model_id, split)
-        out.update(div_stats['overall'])
-        if eval_oracle:
-            oracle = eval_multi.eval_oracle(preds_n, model_id, split)
-        out.update(oracle['overall'])
-        with open(cache_path_n, 'w') as outfile:
-            json.dump({'spice_n': spice_n, 'div_stats': div_stats, 'oracle': oracle}, outfile)
+    # if len(preds_n) > 0:
+    #     cache_path_n = os.path.join('eval_results/', '.cache_'+ model_id + '_' + split + '_n.json')
+    #     spice_n = eval_multi.eval_spice_n(preds_n, model_id, split)
+    #     out.update(spice_n['overall'])
+    #     div_stats = eval_multi.eval_div_stats(preds_n, model_id, split)
+    #     out.update(div_stats['overall'])
+    #     if eval_oracle:
+    #         oracle = eval_multi.eval_oracle(preds_n, model_id, split)
+    #     out.update(oracle['overall'])
+    #     with open(cache_path_n, 'w') as outfile:
+    #         json.dump({'spice_n': spice_n, 'div_stats': div_stats, 'oracle': oracle}, outfile)
         
-    out['bad_count_rate'] = sum([count_bad(_['caption']) for _ in preds_filt]) / float(len(preds_filt))
-    outfile_path = os.path.join('eval_results/', model_id + '_' + split + '.json')
-    with open(outfile_path, 'w') as outfile:
-        json.dump({'overall': out, 'imgToEval': imgToEval}, outfile)
+    # out['bad_count_rate'] = sum([count_bad(_['caption']) for _ in preds_filt]) / float(len(preds_filt))
+    # outfile_path = os.path.join('eval_results/', model_id + '_' + split + '.json')
+    # with open(outfile_path, 'w') as outfile:
+    #     json.dump({'overall': out, 'imgToEval': imgToEval}, outfile)
 
     return out
 
@@ -237,8 +240,10 @@ def eval_split(model, crit, loader, eval_kwargs={}):
 
     lang_stats = None
     if lang_eval == 1:
+        # print("Predictions: ", predictions)
         lang_stats = language_eval(dataset, predictions, n_predictions, eval_kwargs, split)
 
+    # print("Lang stats :", lang_stats)
     # Switch back to training mode
     model.train()
     return loss_sum/loss_evals, predictions, lang_stats

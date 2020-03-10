@@ -20,7 +20,7 @@ def parse_opt():
                                               Note: this file contains absolute paths, be careful when moving files around;
                         'model.ckpt-*'      : file(s) with model definition (created by tf)
                     """)
-    parser.add_argument('--cached_tokens', type=str, default='google-train-idxs',
+    parser.add_argument('--cached_tokens', type=str, default='coco-train-idxs',
                     help='Cached token file for calculating cider score during self critical training.')
 
     # Model settings
@@ -131,7 +131,7 @@ def parse_opt():
                     help='If save checkpoints at every save point')
     parser.add_argument('--checkpoint_path', type=str, default='save',
                     help='directory to store checkpointed models')
-    parser.add_argument('--language_eval', type=int, default=0,
+    parser.add_argument('--language_eval', type=int, default=1,
                     help='Evaluate language as well (1 = yes, 0 = no)? BLEU/CIDEr/METEOR/ROUGE_L? requires coco-caption code from Github.')
     parser.add_argument('--losses_log_every', type=int, default=25,
                     help='How often do we snapshot losses, for inclusion in the progress dump? (0 = disable)')       
@@ -189,6 +189,8 @@ def parse_opt():
     # Other
     parser.add_argument('--use_ref_caps', action='store_true')
     parser.add_argument('--save_all_train_captions', action='store_true')
+    parser.add_argument('--eval_split_during_train', type=str, default='val')
+    parser.add_argument('--use_base_model_for_greedy', action='store_true')
 
     add_vse_options(parser)
 
@@ -249,7 +251,7 @@ def add_eval_options(parser):
                     help='if > 0 then overrule, otherwise load from checkpoint.')
     parser.add_argument('--num_images', type=int, default=-1,
                     help='how many images to use when periodically evaluating the loss? (-1 = all)')
-    parser.add_argument('--language_eval', type=int, default=0,
+    parser.add_argument('--language_eval', type=int, default=1,
                     help='Evaluate language as well (1 = yes, 0 = no)? BLEU/CIDEr/METEOR/ROUGE_L? requires coco-caption code from Github.')
     parser.add_argument('--dump_images', type=int, default=1,
                     help='Dump images into vis/imgs folder for vis? (1=yes,0=no)')
@@ -285,9 +287,9 @@ def add_eval_options(parser):
     parser.add_argument('--image_root', type=str, default='', 
                     help='In case the image paths have to be preprended with a root path to an image folder')
     # For evaluation on MSCOCO images from some split:
-    parser.add_argument('--input_fc_dir', type=str, default='',
+    parser.add_argument('--input_fc_dir', type=str, default='/srv/share2/sgondala/tmp/trainval_36/python3_stuff/trainval_resnet101_faster_rcnn_genome_36.tsv',
                     help='path to the h5file containing the preprocessed dataset')
-    parser.add_argument('--input_att_dir', type=str, default='',
+    parser.add_argument('--input_att_dir', type=str, default='/srv/share2/sgondala/tmp/trainval_36/python3_stuff/trainval_resnet101_faster_rcnn_genome_36.tsv',
                     help='path to the h5file containing the preprocessed dataset')
     parser.add_argument('--input_box_dir', type=str, default='',
                     help='path to the h5file containing the preprocessed dataset')

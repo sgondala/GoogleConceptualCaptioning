@@ -6,12 +6,14 @@ from misc.utils import decode_sequence_to_dict
 from misc.slor_scoring import get_slor_rewards
 from misc.cider_scoring import get_self_critical_cider_reward_using_model
 from misc.vifidel_scoring import get_vifidel_rewards
+from eval_utils import language_eval
 
 class LossWrapper(torch.nn.Module):
-    def __init__(self, model, opt, ix_to_word=None, cider_dataset=None, cider_model=None, language_model=None, language_model_tokenizer = None, unigram_prob_dict=None, glove_embedding=None, glove_word_to_ix=None, ground_truth_object_annotations=None):
+    def __init__(self, model, opt, ix_to_word=None, cider_dataset=None, cider_model=None, language_model=None, language_model_tokenizer = None, unigram_prob_dict=None, glove_embedding=None, glove_word_to_ix=None, ground_truth_object_annotations=None, model_greedy=None):
         super(LossWrapper, self).__init__()
         self.opt = opt
         self.model = model
+        self.model_greedy = model_greedy
         if opt.label_smoothing > 0:
             assert False
             self.crit = utils.LabelSmoothing(smoothing=opt.label_smoothing)
@@ -30,6 +32,17 @@ class LossWrapper(torch.nn.Module):
         self.glove_word_to_ix = glove_word_to_ix
         self.ground_truth_object_annotations = ground_truth_object_annotations
 
+    def post_process(self, captions_list):
+        ret_list = []
+        for entry in captions_list:
+            image_id = entry['image_id'].item()
+            caption = entry['caption']
+            new_dict = {}
+            new_dict['image_id'] = image_id
+            new_dict['caption'] = caption
+            ret_list.append(new_dict)
+        return ret_list
+
     def forward(self, fc_feats, att_feats, labels, masks, att_masks, gts, gt_indices,
                 sc_flag, struc_flag, drop_worst_flag, image_ids):
         out = {}
@@ -41,7 +54,10 @@ class LossWrapper(torch.nn.Module):
             print("Performing self critical training")
             self.model.eval()
             with torch.no_grad():
-                greedy_res, _ = self.model(fc_feats, att_feats, att_masks, mode='sample')
+                if self.model_greedy is None:
+                    greedy_res, _ = self.model(fc_feats, att_feats, att_masks, mode='sample')
+                else:
+                    greedy_res, _ = self.model_greedy(fc_feats, att_feats, att_masks, mode='sample')
 
             self.model.train()
             gen_result, sample_logprobs = self.model(fc_feats, att_feats, att_masks, opt={'sample_max':0}, mode='sample')
@@ -77,10 +93,10 @@ class LossWrapper(torch.nn.Module):
             reward = torch.from_numpy(reward).float().to(gen_result.device)
             out['reward'] = reward[:,0].mean()
 
-            if self.opt.save_all_train_captions:
-                out['gen_captions'] = gen_captions
-                out['greedy_captions'] = greedy_captions
-	
+            # Need to get groundtruth cider
+            out['gen_captions'] = self.post_process(gen_captions)
+            out['greedy_captions'] = self.post_process(greedy_captions)
+
             loss = self.rl_crit(sample_logprobs, gen_result.data, reward, reduction=reduction)
 
         out['loss'] = loss
