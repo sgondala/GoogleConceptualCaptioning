@@ -23,6 +23,7 @@ from misc.rewards import init_scorer, get_self_critical_reward
 from misc.loss_wrapper import LossWrapper
 from misc.utils import decode_sequence
 from eval_utils import language_eval
+import math
 
 # print("Imported all")
 try:
@@ -40,11 +41,13 @@ def eval_cider_and_append_values(predictions, writer, key, start_iteration, batc
     out = language_eval(None, predictions, None, {}, 'val')
     cider_array = np.array(out['CIDErArary'])
     
-    for i in range(len(cider_array) // batch_size + 1):
+    for i in range(math.ceil(len(cider_array) * 1.0 /batch_size)):
         start_index = i*batch_size
         end_index = i*batch_size + batch_size
         cider_avg = cider_array[start_index:end_index].mean()
         add_summary_value(writer, key, cider_avg, start_iteration + i)
+    
+    return i + start_iteration
 
 def train(opt):
     # Deal with feature things before anything
@@ -54,9 +57,7 @@ def train(opt):
         opt.use_fc = True
     if opt.use_box: opt.att_feat_size = opt.att_feat_size + 5
     
-    print("Calling dataloader")
     loader = DataLoader(opt)
-    print("Done with dataloader")
     opt.vocab_size = loader.vocab_size
     opt.seq_length = loader.seq_length
 
@@ -103,7 +104,7 @@ def train(opt):
     
     model_greedy = None
     initial_greedy_model_weights = []
-    if opt.use_base_model_for_greedy:
+    if True:
         model_greedy = models.setup(opt).cuda()
         model_greedy.eval()
         initial_greedy_model_weights = list(model_greedy.parameters())
@@ -215,7 +216,6 @@ def train(opt):
 
     gen_captions_all = {}
     greedy_captions_all = {}
-
 
     greedy_captions_since_last_checkpoint = []
     gen_captions_since_last_checkpoint = []
@@ -350,7 +350,7 @@ def train(opt):
             infos['split_ix'] = loader.split_ix
             
             # make evaluation on validation set, and save model
-            if (iteration % opt.save_checkpoint_every == 1):
+            if (iteration % opt.save_checkpoint_every == 0):
                 print("Calculating validation score")
                 
                 eval_kwargs = {'split': 'val',
@@ -387,11 +387,13 @@ def train(opt):
                 if iteration != 1:
                     # Calculate actual cider values of previous iterations
                     # Doing this here to take advantage of batching
-                    assert len(greedy_captions_since_last_checkpoint) = opt.save_checkpoint_every * opt.batch_size
-                    eval_cider_and_append_values(greedy_captions_since_last_checkpoint, tb_summary_writer, 'greedy_generated_captions_actual_cider_scores', iteration - opt.save_checkpoint_every, opt.batch_size)
+                    # assert len(greedy_captions_since_last_checkpoint) = opt.save_checkpoint_every * opt.batch_size
+                    end_iteration_val = eval_cider_and_append_values(greedy_captions_since_last_checkpoint, tb_summary_writer, 'greedy_generated_captions_actual_cider_scores', iteration - opt.save_checkpoint_every, opt.batch_size)
+                    assert end_iteration_val == iteration
 
-                    assert len(gen_captions_since_last_checkpoint) = opt.save_checkpoint_every * opt.batch_size
-                    eval_cider_and_append_values(gen_captions_since_last_checkpoint, tb_summary_writer, 'gen_generated_captions_actual_cider_scores', iteration - opt.save_checkpoint_every, opt.batch_size)
+                    # assert len(gen_captions_since_last_checkpoint) = opt.save_checkpoint_every * opt.batch_size
+                    end_iteration_val = eval_cider_and_append_values(gen_captions_since_last_checkpoint, tb_summary_writer, 'gen_generated_captions_actual_cider_scores', iteration - opt.save_checkpoint_every, opt.batch_size)
+                    assert end_iteration_val == iteration
 
                 greedy_captions_since_last_checkpoint = []
                 gen_captions_since_last_checkpoint = []
