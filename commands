@@ -120,7 +120,7 @@ Commands with default parameters (COCO val 8 train)
 
 python train.py --batch_size 100 --learning_rate 5e-5 --checkpoint_path checkpoints/coco_sc_on_exp1_cider_and_slor_5e5_base_greedy/ --save_checkpoint_every 50 --val_images_use 5000 --max_epochs 10 --self_critical_after 0  --seq_per_img 1 --start_from checkpoints/coco_on_cc_rm_8_exp_1_3e5/ --use_slor --use_cider 
 
-CIDER Only - python train.py --batch_size 100 --learning_rate 5e-5 --checkpoint_path checkpoints/coco_sc_on_exp1_cider_5e5/ --save_checkpoint_every 50 --val_images_use 5000 --max_epochs 10 --self_critical_after 0  --seq_per_img 1 --start_from checkpoints/coco_on_cc_rm_8_exp_1_3e5/ --use_cider (Failed)
+CIDER Only - python train.py --batch_size 100 --learning_rate 5e-5 --checkpoint_path checkpoints/coco_sc_on_exp1_cider_5e5/ --save_checkpoint_every 50 --val_images_use 5000 --max_epochs 10 --self_critical_after 0  --seq_per_img 1 --start_from checkpoints/coco_on_cc_rm_8_exp_1_3e5/ --use_cider 
 
 CIDER and VIFIDEL - python train.py --batch_size 100 --learning_rate 5e-5 --checkpoint_path checkpoints/coco_sc_on_exp1_cider_and_vifidel_5e5/ --save_checkpoint_every 50 --val_images_use 5000 --max_epochs 10 --self_critical_after 0  --seq_per_img 1 --start_from checkpoints/coco_on_cc_rm_8_exp_1_3e5/  --use_cider --use_vifidel
 

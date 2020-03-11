@@ -93,7 +93,7 @@ class LossWrapper(torch.nn.Module):
             reward = torch.from_numpy(reward).float().to(gen_result.device)
             out['reward'] = reward[:,0].mean()
 
-            # Need to get groundtruth cider
+            # Needed to get groundtruth cider
             out['gen_captions'] = self.post_process(gen_captions)
             out['greedy_captions'] = self.post_process(greedy_captions)
 

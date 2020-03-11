@@ -36,18 +36,21 @@ def add_summary_value(writer, key, value, iteration):
     if writer:
         writer.add_scalar(key, value, iteration)
 
-def eval_cider_and_append_values(predictions, writer, key, start_iteration, batch_size):
+def eval_cider_and_append_values(predictions, writer, key, start_iteration, batch_size, losses_log_every):
     # TODO - This hardcodes to coco val. Take care
     out = language_eval(None, predictions, None, {}, 'val')
     cider_array = np.array(out['CIDErArary'])
-    
+    # print("Length of cider array ", len(cider_array))
+
     for i in range(math.ceil(len(cider_array) * 1.0 /batch_size)):
+        # print("Index in eval cider", i)
         start_index = i*batch_size
         end_index = i*batch_size + batch_size
         cider_avg = cider_array[start_index:end_index].mean()
-        add_summary_value(writer, key, cider_avg, start_iteration + i)
+        print(key, cider_avg, start_iteration + (i + 1)*losses_log_every)
+        add_summary_value(writer, key, cider_avg, start_iteration + (i + 1)*losses_log_every)
     
-    return i + start_iteration
+    return start_iteration + (i + 1) * losses_log_every
 
 def train(opt):
     # Deal with feature things before anything
@@ -325,10 +328,10 @@ def train(opt):
                     add_summary_value(tb_summary_writer, 'avg_gen_slor', model_out.get('average_gen_slor', 0), iteration)
                     add_summary_value(tb_summary_writer, 'avg_greedy_vifidel', model_out.get('average_greedy_vifidel', 0), iteration)
                     add_summary_value(tb_summary_writer, 'avg_gen_vifidel', model_out.get('average_gen_vifidel', 0), iteration)
-                    add_summary_value(tb_summary_writer, 'average_gen_cider_ground_truth', model_out.get('average_gen_cider_ground_truth', 0), iteration)
-                    add_summary_value(tb_summary_writer, 'average_greedy_cider_ground_truth', model_out.get('average_greedy_cider_ground_truth', 0), iteration)
-
+                    
                     greedy_captions_since_last_checkpoint += model_out['greedy_captions']
+                    print("Length of greedy captions ", len(greedy_captions_since_last_checkpoint), len(model_out['greedy_captions']))
+
                     gen_captions_since_last_checkpoint += model_out['gen_captions']
 
                     if True:
@@ -389,11 +392,11 @@ def train(opt):
                     # Calculate actual cider values of previous iterations
                     # Doing this here to take advantage of batching
                     # assert len(greedy_captions_since_last_checkpoint) = opt.save_checkpoint_every * opt.batch_size
-                    end_iteration_val = eval_cider_and_append_values(greedy_captions_since_last_checkpoint, tb_summary_writer, 'greedy_generated_captions_actual_cider_scores', iteration - opt.save_checkpoint_every, opt.batch_size)
-                    assert end_iteration_val == iteration
+                    end_iteration_val = eval_cider_and_append_values(greedy_captions_since_last_checkpoint, tb_summary_writer, 'greedy_generated_captions_actual_cider_scores', iteration - opt.save_checkpoint_every, opt.batch_size, opt.losses_log_every)
+                    assert end_iteration_val == iteration, str(end_iteration_val) + ',' + str(iteration)
 
                     # assert len(gen_captions_since_last_checkpoint) = opt.save_checkpoint_every * opt.batch_size
-                    end_iteration_val = eval_cider_and_append_values(gen_captions_since_last_checkpoint, tb_summary_writer, 'gen_generated_captions_actual_cider_scores', iteration - opt.save_checkpoint_every, opt.batch_size)
+                    end_iteration_val = eval_cider_and_append_values(gen_captions_since_last_checkpoint, tb_summary_writer, 'gen_generated_captions_actual_cider_scores', iteration - opt.save_checkpoint_every, opt.batch_size, opt.losses_log_every)
                     assert end_iteration_val == iteration
 
                 greedy_captions_since_last_checkpoint = []
@@ -449,6 +452,15 @@ def train(opt):
         print('Save ckpt done.')
         stack_trace = traceback.format_exc()
         print(stack_trace)
+        
+        # Dump captions
+        final_dict = {}
+        final_dict['gen_captions'] = gen_captions_all
+        final_dict['greedy_captions'] = greedy_captions_all
+        json.dump(final_dict, open(opt.checkpoint_path + '/captions_all.json', 'w'))
 
 opt = opts.parse_opt()
+
+assert opt.batch_size % opt.losses_log_every == 0
+
 train(opt)
