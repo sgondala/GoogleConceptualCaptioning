@@ -183,7 +183,7 @@ def parse_opt():
     # Vifidel scores
     parser.add_argument('--glove_vectors', type=str, default='data/glove_vectors.pt')
     parser.add_argument('--glove_word_to_ix', type=str, default='data/glove_stoi.json')
-    parser.add_argument('--ground_truth_object_annotations', type=str, default='data/coco_ground_truth_annotations.json')
+    parser.add_argument('--ground_truth_object_annotations', type=str, default='data/coco_gt_objs_modified.json')
     parser.add_argument('--use_vifidel', action='store_true')
 
     # Other
@@ -191,6 +191,8 @@ def parse_opt():
     parser.add_argument('--save_all_train_captions', action='store_true')
     parser.add_argument('--eval_split_during_train', type=str, default='val')
     parser.add_argument('--use_base_model_for_greedy', action='store_true')
+    parser.add_argument('--id_language_eval', type=str, default='')
+    # parser.add_argument('--id_language_eval', type=str, default='')
 
     add_vse_options(parser)
 

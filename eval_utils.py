@@ -28,7 +28,7 @@ def count_bad(sen):
         return 0
 
 def language_eval(dataset, preds, preds_n, eval_kwargs, split):
-    model_id = eval_kwargs.get('id', '')
+    model_id = eval_kwargs.get('id_language_eval', '')
     eval_oracle = eval_kwargs.get('eval_oracle', 0)
     
     import sys

@@ -446,7 +446,7 @@ def train(opt):
             final_dict['greedy_captions'] = greedy_captions_all
             json.dump(final_dict, open(opt.checkpoint_path + '/captions_all.json', 'w'))
 
-    except (RuntimeError, KeyboardInterrupt):
+    except:
         print('Save ckpt on exception ...')
         save_checkpoint(model, infos, optimizer)
         print('Save ckpt done.')
@@ -462,5 +462,6 @@ def train(opt):
 opt = opts.parse_opt()
 
 assert opt.batch_size % opt.losses_log_every == 0
+assert len(opt.id_language_eval) > 0
 
 train(opt)

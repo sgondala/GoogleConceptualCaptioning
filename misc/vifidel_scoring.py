@@ -29,6 +29,8 @@ def get_vifidel_score(word_embedding, word_to_index, ground_truth_annotation, ca
     -------
     score : Vifidel score
     '''
+    # print("Caption ", caption)
+    # print("Ground truth ", ground_truth_annotation)
     for word in word_tokenize(ground_truth_annotation):
         if word.lower() not in word_to_index:
             ground_truth_annotation = ground_truth_annotation.replace(word, '')
@@ -85,24 +87,28 @@ def get_vifidel_rewards(greedy_captions, gen_captions, ground_truth_annotations,
     gen_vifidel_scores = []
     
     for entry in gen_captions:
-        image_id = entry['image_id'].item()
+        image_id = entry['image_id']
+        if not isinstance(image_id, int): 
+            image_id = image_id.item()
         caption = entry['caption']
         gen_vifidel_scores.append(get_vifidel_score(glove_embedding, glove_word_to_ix, ground_truth_annotations.get(str(image_id), ""), caption))
 
     greedy_vifidel_scores = []
     for entry in greedy_captions:
-        image_id = entry['image_id'].item()
+        image_id = entry['image_id']
+        if not isinstance(image_id, int): 
+            image_id = image_id.item()
         caption = entry['caption']
         greedy_vifidel_scores.append(get_vifidel_score(glove_embedding, glove_word_to_ix, ground_truth_annotations.get(str(image_id), ""), caption))
     
     gen_vifidel_scores = np.array(gen_vifidel_scores)
     greedy_vifidel_scores = np.array(greedy_vifidel_scores)
 
-    average_greedy_vifidel = greedy_vifidel_scores.mean()
-    average_gen_vifidel = gen_vifidel_scores.mean()
-
     gen_vifidel_scores = clip_vifidel_scores(gen_vifidel_scores)
     greedy_vifidel_scores = clip_vifidel_scores(greedy_vifidel_scores)
+
+    average_greedy_vifidel = greedy_vifidel_scores.mean()
+    average_gen_vifidel = gen_vifidel_scores.mean()
 
     assert len(gen_vifidel_scores) == len(greedy_vifidel_scores)
     
@@ -111,8 +117,17 @@ def get_vifidel_rewards(greedy_captions, gen_captions, ground_truth_annotations,
     
     return rewards, average_greedy_vifidel, average_gen_vifidel
 
-
-
+if __name__ == '__main__':
+    import torch.nn as nn
+    import json
+    glove_embedding = nn.Embedding.from_pretrained(torch.load('../data/glove_vectors.pt').cuda(), freeze=True).cuda()
+    glove_word_to_ix = json.load(open('../data/glove_stoi.json', 'r'))
+    ground_truth_object_annotations = json.load(open('../data/coco_gt_objs_modified.json', 'r'))
+    greedy_captions = json.load(open('../eval_results/coco_temp_captions_train.json'))
+    length_of_output = 1
+    rewards, a, _ = get_vifidel_rewards(greedy_captions, greedy_captions, ground_truth_object_annotations, glove_embedding, glove_word_to_ix, length_of_output)
+    # print(rewards.tolist())
+    print(a)
 
 
    
