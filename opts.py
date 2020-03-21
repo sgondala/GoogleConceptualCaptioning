@@ -192,7 +192,10 @@ def parse_opt():
     parser.add_argument('--eval_split_during_train', type=str, default='val')
     parser.add_argument('--use_base_model_for_greedy', action='store_true')
     parser.add_argument('--id_language_eval', type=str, default='')
-    # parser.add_argument('--id_language_eval', type=str, default='')
+    parser.add_argument('--is_classification_cider_model', type=int, default=0)
+    parser.add_argument('--classification_threshold', type=float, default=0.999)
+    parser.add_argument('--do_not_generate_cider_plots', action='store_false')
+   # parser.add_argument('--id_language_eval', type=str, default='')
 
     add_vse_options(parser)
 

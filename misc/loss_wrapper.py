@@ -9,7 +9,7 @@ from misc.vifidel_scoring import get_vifidel_rewards
 from eval_utils import language_eval
 
 class LossWrapper(torch.nn.Module):
-    def __init__(self, model, opt, ix_to_word=None, cider_dataset=None, cider_model=None, language_model=None, language_model_tokenizer = None, unigram_prob_dict=None, glove_embedding=None, glove_word_to_ix=None, ground_truth_object_annotations=None, model_greedy=None):
+    def __init__(self, model, opt, ix_to_word=None, cider_dataset=None, cider_model=None, language_model=None, language_model_tokenizer = None, unigram_prob_dict=None, glove_embedding=None, glove_word_to_ix=None, ground_truth_object_annotations=None, model_greedy=None, is_classification_cider_model=False, classification_threshold = 0.999):
         super(LossWrapper, self).__init__()
         self.opt = opt
         self.model = model
@@ -31,6 +31,8 @@ class LossWrapper(torch.nn.Module):
         self.glove_embedding = glove_embedding
         self.glove_word_to_ix = glove_word_to_ix
         self.ground_truth_object_annotations = ground_truth_object_annotations
+        self.is_classification_cider_model = is_classification_cider_model
+        self.classification_threshold = classification_threshold
 
     def post_process(self, captions_list):
         ret_list = []
@@ -72,7 +74,7 @@ class LossWrapper(torch.nn.Module):
                 reward = get_self_critical_reward(greedy_res, gts, gen_result, self.opt)
             else:
                 if self.opt.use_cider:
-                    cider_reward, average_greedy_cider, average_gen_cider = get_self_critical_cider_reward_using_model(self.cider_dataset, self.cider_model, greedy_captions, gen_captions, self.opt, length_of_output)
+                    cider_reward, average_greedy_cider, average_gen_cider = get_self_critical_cider_reward_using_model(self.cider_dataset, self.cider_model, greedy_captions, gen_captions, self.opt, length_of_output, self.is_classification_cider_model, self.classification_threshold)
                     assert cider_reward.shape == reward.shape
                     reward += cider_reward
                     out['average_greedy_cider'] = average_greedy_cider

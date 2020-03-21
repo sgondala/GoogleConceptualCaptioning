@@ -10,7 +10,10 @@ def clips_cider_scores(cider_scores):
     scores = scores / 2.0
     return scores
 
-def get_single_cider_scores(cider_dataset, model):
+def sigmoid(x):
+  return 1 / (1 + np.exp(-x))
+
+def get_single_cider_scores(cider_dataset, model, is_classification_model, classification_threshold):
     val_dataloader = DataLoader(cider_dataset, batch_size=10,shuffle=False)
     rewards = []
     
@@ -21,19 +24,24 @@ def get_single_cider_scores(cider_dataset, model):
             model(captions.cuda(), features.cuda(), spatials.cuda(), segment_ids.cuda(), input_mask.cuda(), image_mask.cuda(), co_attention_mask.cuda())
         rewards += vil_logit.squeeze(-1).tolist()
     
-    return np.array(rewards)
+    if is_classification_model:
+        return (sigmoid(np.array(rewards)) < classification_threshold).astype(float)
+    else:
+        return np.array(rewards)
 
-def get_self_critical_cider_reward_using_model(cider_dataset, model, captions_greedy, captions_gen, opt, length_of_output):    
+def get_self_critical_cider_reward_using_model(cider_dataset, model, captions_greedy, captions_gen, opt, length_of_output, is_classification_model, classification_threshold):
     # Assuming captions is a mix of both
     cider_dataset.captions = captions_greedy
-    cider_greedy = get_single_cider_scores(cider_dataset, model)
+    cider_greedy = get_single_cider_scores(cider_dataset, model, is_classification_model, classification_threshold)
     average_greedy_cider = cider_greedy.mean()
-    cider_greedy = clips_cider_scores(cider_greedy)
+    if not is_classification_model:
+        cider_greedy = clips_cider_scores(cider_greedy)
 
     cider_dataset.captions = captions_gen
-    cider_gen = get_single_cider_scores(cider_dataset, model)
+    cider_gen = get_single_cider_scores(cider_dataset, model, is_classification_model, classification_threshold)
     average_gen_cider = cider_gen.mean()
-    cider_gen = clips_cider_scores(cider_gen)
+    if not is_classification_model:
+        cider_gen = clips_cider_scores(cider_gen)
 
     assert len(cider_gen) == len(cider_greedy)
     scores = (cider_gen - cider_greedy) * opt.cider_reward_weight

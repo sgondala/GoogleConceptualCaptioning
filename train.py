@@ -177,7 +177,7 @@ def train(opt):
             glove_word_to_ix = json.load(open(opt.glove_word_to_ix, 'r'))
             ground_truth_object_annotations = json.load(open(opt.ground_truth_object_annotations, 'r'))
 
-    lw_model = LossWrapper(model, opt, vocab, cider_dataset, cider_model, open_gpt_model, open_gpt_tokenizer, unigram_prob_dict, glove_embedding, glove_word_to_ix, ground_truth_object_annotations, model_greedy).cuda()
+    lw_model = LossWrapper(model, opt, vocab, cider_dataset, cider_model, open_gpt_model, open_gpt_tokenizer, unigram_prob_dict, glove_embedding, glove_word_to_ix, ground_truth_object_annotations, model_greedy, opt.is_classification_cider_model, opt.classification_threshold).cuda()
     
     dp_lw_model = torch.nn.DataParallel(lw_model)
 
@@ -363,11 +363,13 @@ def train(opt):
                     dp_model, lw_model.crit, loader, eval_kwargs)
 
                 # Rechecking on train data too
-                eval_kwargs_train = {'split': 'train',
-                                'dataset': opt.input_json}
-                eval_kwargs_train.update(vars(opt))
-                _, _, train_lang_stats = eval_utils.eval_split(
-                    dp_model, lw_model.crit, loader, eval_kwargs_train)
+                train_lang_stats = None
+                if not opt.do_not_generate_cider_plots:
+                    eval_kwargs_train = {'split': 'train',
+                                    'dataset': opt.input_json}
+                    eval_kwargs_train.update(vars(opt))
+                    _, _, train_lang_stats = eval_utils.eval_split(
+                        dp_model, lw_model.crit, loader, eval_kwargs_train)
                 
                 if opt.reduce_on_plateau:
                     if 'CIDEr' in lang_stats:
@@ -389,15 +391,15 @@ def train(opt):
                 val_result_history[iteration] = {'loss': val_loss, 'lang_stats': lang_stats, 'predictions': predictions}
 
                 if iteration != 1:
-                    # Calculate actual cider values of previous iterations
-                    # Doing this here to take advantage of batching
-                    # assert len(greedy_captions_since_last_checkpoint) = opt.save_checkpoint_every * opt.batch_size
-                    end_iteration_val = eval_cider_and_append_values(greedy_captions_since_last_checkpoint, tb_summary_writer, 'greedy_generated_captions_actual_cider_scores', iteration - opt.save_checkpoint_every, opt.batch_size, opt.losses_log_every)
-                    assert end_iteration_val == iteration, str(end_iteration_val) + ',' + str(iteration)
+                    if not opt.do_not_generate_cider_plots:
+                        # Calculate actual cider values of previous iterations
+                        # Doing this here to take advantage of batching
+                        
+                        end_iteration_val = eval_cider_and_append_values(greedy_captions_since_last_checkpoint, tb_summary_writer, 'greedy_generated_captions_actual_cider_scores', iteration - opt.save_checkpoint_every, opt.batch_size, opt.losses_log_every)
+                        assert end_iteration_val == iteration, str(end_iteration_val) + ',' + str(iteration)
 
-                    # assert len(gen_captions_since_last_checkpoint) = opt.save_checkpoint_every * opt.batch_size
-                    end_iteration_val = eval_cider_and_append_values(gen_captions_since_last_checkpoint, tb_summary_writer, 'gen_generated_captions_actual_cider_scores', iteration - opt.save_checkpoint_every, opt.batch_size, opt.losses_log_every)
-                    assert end_iteration_val == iteration
+                        end_iteration_val = eval_cider_and_append_values(gen_captions_since_last_checkpoint, tb_summary_writer, 'gen_generated_captions_actual_cider_scores', iteration - opt.save_checkpoint_every, opt.batch_size, opt.losses_log_every)
+                        assert end_iteration_val == iteration
 
                 greedy_captions_since_last_checkpoint = []
                 gen_captions_since_last_checkpoint = []
@@ -428,6 +430,13 @@ def train(opt):
                 if best_flag:
                     save_checkpoint(model, infos, optimizer, append='best')
 
+                dict_to_save = {}
+                dict_to_save['gen_captions'] = gen_captions_all
+                dict_to_save['greedy_captions'] = greedy_captions_all
+                gen_captions_all = {}
+                greedy_captions_all = {}
+                json.dump(dict_to_save, open(opt.checkpoint_path + '/captions_' + str(iteration) + '.json', 'w'))
+
             # Stop if reaching max epochs
             if epoch >= opt.max_epochs and opt.max_epochs != -1:
                 break
@@ -440,11 +449,11 @@ def train(opt):
             final_greedy_model_weights = list(model_greedy.parameters())
             assert initial_greedy_model_weights == final_greedy_model_weights
 
-        if True:
-            final_dict = {}
-            final_dict['gen_captions'] = gen_captions_all
-            final_dict['greedy_captions'] = greedy_captions_all
-            json.dump(final_dict, open(opt.checkpoint_path + '/captions_all.json', 'w'))
+        # if True:
+        #     final_dict = {}
+        #     final_dict['gen_captions'] = gen_captions_all
+        #     final_dict['greedy_captions'] = greedy_captions_all
+        #     json.dump(final_dict, open(opt.checkpoint_path + '/captions_all.json', 'w'))
 
     except:
         print('Save ckpt on exception ...')
@@ -454,10 +463,10 @@ def train(opt):
         print(stack_trace)
         
         # Dump captions
-        final_dict = {}
-        final_dict['gen_captions'] = gen_captions_all
-        final_dict['greedy_captions'] = greedy_captions_all
-        json.dump(final_dict, open(opt.checkpoint_path + '/captions_all.json', 'w'))
+        # final_dict = {}
+        # final_dict['gen_captions'] = gen_captions_all
+        # final_dict['greedy_captions'] = greedy_captions_all
+        # json.dump(final_dict, open(opt.checkpoint_path + '/captions_all.json', 'w'))
 
 opt = opts.parse_opt()
 
