@@ -38,7 +38,7 @@ assert len(opt.out_file_path) != 0
 print(opt)
 
 # Load infos
-with open(opt.infos_path) as f:
+with open(opt.infos_path, 'rb') as f:
     infos = utils.pickle_load(f)
 
 # override and collect parameters

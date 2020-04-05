@@ -25,7 +25,6 @@ from misc.utils import decode_sequence
 from eval_utils import language_eval
 import math
 
-# print("Imported all")
 try:
     import tensorboardX as tb
 except ImportError:
@@ -36,31 +35,31 @@ def add_summary_value(writer, key, value, iteration):
     if writer:
         writer.add_scalar(key, value, iteration)
 
-def eval_cider_and_append_values(predictions, writer, key, start_iteration, batch_size, losses_log_every):
+def eval_cider_and_append_values(predictions, writer, key, start_iteration, batch_size, losses_log_every, opt, cache_file_key):
     # TODO - This hardcodes to coco val. Take care
-    out = language_eval(None, predictions, None, {}, 'val')
+    out = language_eval(None, predictions, None, {'id_language_eval': opt.id_language_eval}, cache_file_key)
     cider_array = np.array(out['CIDErArary'])
     # print("Length of cider array ", len(cider_array))
 
+    end_number = 0
     for i in range(math.ceil(len(cider_array) * 1.0 /batch_size)):
+        end_number = i
         # print("Index in eval cider", i)
         start_index = i*batch_size
         end_index = i*batch_size + batch_size
         cider_avg = cider_array[start_index:end_index].mean()
-        print(key, cider_avg, start_iteration + (i + 1)*losses_log_every)
+        # print(key, cider_avg, start_iteration + (i + 1)*losses_log_every)
         add_summary_value(writer, key, cider_avg, start_iteration + (i + 1)*losses_log_every)
     
-    return start_iteration + (i + 1) * losses_log_every
+    return start_iteration + (end_number + 1) * losses_log_every
 
 def train(opt):
     # Deal with feature things before anything
-    print("Opt input", opt)
+    # print("Opt input", opt)
     opt.use_fc, opt.use_att = utils.if_use_feat(opt.caption_model)
-    if opt.vse_model == 'fc':
-        opt.use_fc = True
-    if opt.use_box: opt.att_feat_size = opt.att_feat_size + 5
     
     loader = DataLoader(opt)
+    loader_for_train_data_generation = DataLoader(opt)
     opt.vocab_size = loader.vocab_size
     opt.seq_length = loader.seq_length
 
@@ -98,12 +97,14 @@ def train(opt):
 
     loader.iterators = infos.get('iterators', loader.iterators)
     loader.split_ix = infos.get('split_ix', loader.split_ix)
+    # best_val_score = None
+    best_val_score = -10000000
     if opt.load_best_score == 1:
-        best_val_score = infos.get('best_val_score', None)
+        best_val_score = -10000000
+        # best_val_score = infos.get('best_val_score', None)
 
     opt.vocab = loader.get_vocab()
     model = models.setup(opt).cuda()
-    print(model.parameters)
     
     model_greedy = None
     initial_greedy_model_weights = []
@@ -116,10 +117,8 @@ def train(opt):
 
     dp_model = torch.nn.DataParallel(model)
     
-
     vocab = opt.vocab
-    # del opt.vocab
-
+   
     cider_model = None
     cider_dataset = None
 
@@ -185,15 +184,16 @@ def train(opt):
     # Assure in training mode
     dp_lw_model.train()
 
-    if opt.noamopt:
-        assert opt.caption_model == 'transformer', 'noamopt can only work with transformer'
-        optimizer = utils.get_std_opt(model, factor=opt.noamopt_factor, warmup=opt.noamopt_warmup)
-        optimizer._step = iteration
-    elif opt.reduce_on_plateau:
-        optimizer = utils.build_optimizer(model.parameters(), opt)
-        optimizer = utils.ReduceLROnPlateau(optimizer, factor=0.5, patience=3)
-    else:
-        optimizer = utils.build_optimizer(model.parameters(), opt)
+    # if opt.noamopt:
+    #     assert opt.caption_model == 'transformer', 'noamopt can only work with transformer'
+    #     optimizer = utils.get_std_opt(model, factor=opt.noamopt_factor, warmup=opt.noamopt_warmup)
+    #     optimizer._step = iteration
+    # elif opt.reduce_on_plateau:
+    #     optimizer = utils.build_optimizer(model.parameters(), opt)
+    #     optimizer = utils.ReduceLROnPlateau(optimizer, factor=0.5, patience=3)
+    # else:
+    optimizer = utils.build_optimizer(model.parameters(), opt)
+    
     # Load the optimizer
     if vars(opt).get('start_from', None) is not None and os.path.isfile(os.path.join(opt.start_from,"optimizer.pth")):
         optimizer.load_state_dict(torch.load(os.path.join(opt.start_from, 'optimizer.pth')))
@@ -216,7 +216,6 @@ def train(opt):
             with open(os.path.join(opt.checkpoint_path, 'histories_'+opt.id+'%s.pkl' %(append)), 'wb') as f:
                 utils.pickle_dump(histories, f)
 
-
     gen_captions_all = {}
     greedy_captions_all = {}
 
@@ -226,7 +225,7 @@ def train(opt):
     try:
         while True:
             if epoch_done:
-                if not opt.noamopt and not opt.reduce_on_plateau:
+                if True:
                     # Assign the learning rate
                     if epoch > opt.learning_rate_decay_start and opt.learning_rate_decay_start >= 0:
                         frac = (epoch - opt.learning_rate_decay_start) // opt.learning_rate_decay_every
@@ -235,11 +234,12 @@ def train(opt):
                     else:
                         opt.current_lr = opt.learning_rate
                     utils.set_lr(optimizer, opt.current_lr) # set the decayed rate
+                
                 # Assign the scheduled sampling prob
-                if epoch > opt.scheduled_sampling_start and opt.scheduled_sampling_start >= 0:
-                    frac = (epoch - opt.scheduled_sampling_start) // opt.scheduled_sampling_increase_every
-                    opt.ss_prob = min(opt.scheduled_sampling_increase_prob  * frac, opt.scheduled_sampling_max_prob)
-                    model.ss_prob = opt.ss_prob
+                # if epoch > opt.scheduled_sampling_start and opt.scheduled_sampling_start >= 0:
+                #     frac = (epoch - opt.scheduled_sampling_start) // opt.scheduled_sampling_increase_every
+                #     opt.ss_prob = min(opt.scheduled_sampling_increase_prob  * frac, opt.scheduled_sampling_max_prob)
+                #     model.ss_prob = opt.ss_prob
 
                 # If start self critical training
                 if opt.self_critical_after != -1 and epoch >= opt.self_critical_after:
@@ -248,22 +248,25 @@ def train(opt):
                         init_scorer(opt.cached_tokens)
                 else:
                     sc_flag = False
-                if opt.structure_after != -1 and epoch >= opt.structure_after:
-                    struc_flag = True
-                    init_scorer(opt.cached_tokens)
-                else:
-                    struc_flag = False
-                if opt.drop_worst_after != -1 and epoch >= opt.drop_worst_after:
-                    drop_worst_flag = True
-                else:
-                    drop_worst_flag = False
+                
+                # if opt.structure_after != -1 and epoch >= opt.structure_after:
+                #     struc_flag = True
+                #     init_scorer(opt.cached_tokens)
+                # else:
+                #     struc_flag = False
+                # if opt.drop_worst_after != -1 and epoch >= opt.drop_worst_after:
+                #     drop_worst_flag = True
+                # else:
+                #     drop_worst_flag = False
 
                 epoch_done = False
                     
-            start = time.time()
+            # start = time.time()
             # Load data from train split (0)
+            if iteration % 100 == 0:
+                print("Iteration number ", iteration)
             data = loader.get_batch('train')
-            print('Read data:', time.time() - start)
+            # print('Read data:', time.time() - start)
 
             torch.cuda.synchronize()
             start = time.time()
@@ -275,19 +278,19 @@ def train(opt):
             image_ids = data['image_ids']
             
             optimizer.zero_grad()
-            model_out = dp_lw_model(fc_feats, att_feats, labels, masks, att_masks, data['gts'], torch.arange(0, len(data['gts'])), sc_flag, struc_flag, drop_worst_flag, image_ids)
+            model_out = dp_lw_model(fc_feats, att_feats, labels, masks, att_masks, data['gts'], torch.arange(0, len(data['gts'])), sc_flag, False, False, image_ids)
 
-            if not drop_worst_flag:
-                loss = model_out['loss'].mean()
-            else:
-                loss = model_out['loss']
-                loss, idx = torch.topk(loss, k=int(loss.shape[0] * (1-opt.drop_worst_rate)), largest=False)
-                loss = loss.mean()
+            # if not drop_worst_flag:
+            loss = model_out['loss'].mean()
+            # else:
+            #     loss = model_out['loss']
+            #     loss, idx = torch.topk(loss, k=int(loss.shape[0] * (1-opt.drop_worst_rate)), largest=False)
+            #     loss = loss.mean()
 
-                idx = set(idx.tolist())
-                for ii, s in enumerate(utils.decode_sequence(loader.get_vocab(), labels.cpu()[:, 1:])):
-                    if ii not in idx:
-                        print(s)
+            #     idx = set(idx.tolist())
+            #     for ii, s in enumerate(utils.decode_sequence(loader.get_vocab(), labels.cpu()[:, 1:])):
+            #         if ii not in idx:
+            #             print(s)
 
             loss.backward()
             utils.clip_gradient(optimizer, opt.grad_clip)
@@ -295,31 +298,28 @@ def train(opt):
             train_loss = loss.item()
             torch.cuda.synchronize()
             end = time.time()
-            if struc_flag:
-                print("iter {} (epoch {}), train_loss = {:.3f}, lm_loss = {:.3f}, struc_loss = {:.3f}, time/batch = {:.3f}" \
-                    .format(iteration, epoch, train_loss, model_out['lm_loss'].mean().item(), model_out['struc_loss'].mean().item(), end - start))
-            elif not sc_flag:
-                print("iter {} (epoch {}), train_loss = {:.3f}, time/batch = {:.3f}" \
-                    .format(iteration, epoch, train_loss, end - start))
-            else:
-                print("iter {} (epoch {}), avg_reward = {:.3f}, time/batch = {:.3f}" \
-                    .format(iteration, epoch, model_out['reward'].mean(), end - start))
+            # if struc_flag:
+            #     print("iter {} (epoch {}), train_loss = {:.3f}, lm_loss = {:.3f}, struc_loss = {:.3f}, time/batch = {:.3f}" \
+            #         .format(iteration, epoch, train_loss, model_out['lm_loss'].mean().item(), model_out['struc_loss'].mean().item(), end - start))
+            
+            # if not sc_flag:
+            #     print("iter {} (epoch {}), train_loss = {:.3f}, time/batch = {:.3f}" \
+            #         .format(iteration, epoch, train_loss, end - start))
+            # else:
+            #     print("iter {} (epoch {}), avg_reward = {:.3f}, time/batch = {:.3f}" \
+            #         .format(iteration, epoch, model_out['reward'].mean(), end - start))
 
             # Update the iteration and epoch
             iteration += 1
             if data['bounds']['wrapped']:
                 epoch += 1
                 epoch_done = True
+                print("Epoch Done")
 
             # Write the training loss summary
             if (iteration % opt.losses_log_every == 0):
                 add_summary_value(tb_summary_writer, 'train_loss', train_loss, iteration)
-                if opt.noamopt:
-                    opt.current_lr = optimizer.rate()
-                elif opt.reduce_on_plateau:
-                    opt.current_lr = optimizer.current_lr
                 add_summary_value(tb_summary_writer, 'learning_rate', opt.current_lr, iteration)
-                add_summary_value(tb_summary_writer, 'scheduled_sampling_prob', model.ss_prob, iteration)
                 if sc_flag:
                     add_summary_value(tb_summary_writer, 'avg_reward', model_out['reward'].mean(), iteration)
                     add_summary_value(tb_summary_writer, 'avg_greedy_cider', model_out.get('average_greedy_cider', 0), iteration)
@@ -330,17 +330,11 @@ def train(opt):
                     add_summary_value(tb_summary_writer, 'avg_gen_vifidel', model_out.get('average_gen_vifidel', 0), iteration)
                     
                     greedy_captions_since_last_checkpoint += model_out['greedy_captions']
-                    print("Length of greedy captions ", len(greedy_captions_since_last_checkpoint), len(model_out['greedy_captions']))
 
                     gen_captions_since_last_checkpoint += model_out['gen_captions']
 
-                    if True:
-                        gen_captions_all[iteration] = model_out['gen_captions']
-                        greedy_captions_all[iteration] = model_out['greedy_captions']
-
-                elif struc_flag:
-                    add_summary_value(tb_summary_writer, 'lm_loss', model_out['lm_loss'].mean().item(), iteration)
-                    add_summary_value(tb_summary_writer, 'struc_loss', model_out['struc_loss'].mean().item(), iteration)
+                    gen_captions_all[iteration] = model_out['gen_captions']
+                    greedy_captions_all[iteration] = model_out['greedy_captions']
 
                 loss_history[iteration] = train_loss if not sc_flag else model_out['reward'].mean()
                 lr_history[iteration] = opt.current_lr
@@ -354,7 +348,7 @@ def train(opt):
             
             # make evaluation on validation set, and save model
             if (iteration % opt.save_checkpoint_every == 0):
-                print("Calculating validation score")
+                print("Calculating validation score for val data")
                 
                 eval_kwargs = {'split': 'val',
                                 'dataset': opt.input_json}
@@ -363,19 +357,21 @@ def train(opt):
                     dp_model, lw_model.crit, loader, eval_kwargs)
 
                 # Rechecking on train data too
+                print("Calculating validation score for train data")
                 train_lang_stats = None
+
                 if not opt.do_not_generate_cider_plots:
                     eval_kwargs_train = {'split': 'train',
                                     'dataset': opt.input_json}
                     eval_kwargs_train.update(vars(opt))
                     _, _, train_lang_stats = eval_utils.eval_split(
-                        dp_model, lw_model.crit, loader, eval_kwargs_train)
+                        dp_model, lw_model.crit, loader_for_train_data_generation, eval_kwargs_train)
                 
-                if opt.reduce_on_plateau:
-                    if 'CIDEr' in lang_stats:
-                        optimizer.scheduler_step(-lang_stats['CIDEr'])
-                    else:
-                        optimizer.scheduler_step(val_loss)
+                # if opt.reduce_on_plateau:
+                #     if 'CIDEr' in lang_stats:
+                #         optimizer.scheduler_step(-lang_stats['CIDEr'])
+                #     else:
+                #         optimizer.scheduler_step(val_loss)
                 
                 # Write validation result into summary
                 add_summary_value(tb_summary_writer, 'validation loss', val_loss, iteration)
@@ -395,26 +391,34 @@ def train(opt):
                         # Calculate actual cider values of previous iterations
                         # Doing this here to take advantage of batching
                         
-                        end_iteration_val = eval_cider_and_append_values(greedy_captions_since_last_checkpoint, tb_summary_writer, 'greedy_generated_captions_actual_cider_scores', iteration - opt.save_checkpoint_every, opt.batch_size, opt.losses_log_every)
+                        end_iteration_val = eval_cider_and_append_values(greedy_captions_since_last_checkpoint, tb_summary_writer, 'greedy_generated_captions_actual_cider_scores', iteration - opt.save_checkpoint_every, opt.batch_size, opt.losses_log_every, opt, 'greedy_captions')
                         assert end_iteration_val == iteration, str(end_iteration_val) + ',' + str(iteration)
 
-                        end_iteration_val = eval_cider_and_append_values(gen_captions_since_last_checkpoint, tb_summary_writer, 'gen_generated_captions_actual_cider_scores', iteration - opt.save_checkpoint_every, opt.batch_size, opt.losses_log_every)
+                        end_iteration_val = eval_cider_and_append_values(gen_captions_since_last_checkpoint, tb_summary_writer, 'gen_generated_captions_actual_cider_scores', iteration - opt.save_checkpoint_every, opt.batch_size, opt.losses_log_every, opt, 'gen_captions')
                         assert end_iteration_val == iteration
 
                 greedy_captions_since_last_checkpoint = []
                 gen_captions_since_last_checkpoint = []
 
                 # Save model if is improving on validation result
+                
+                print("Cider stats ", lang_stats['CIDEr'])
                 if opt.language_eval == 1:
                     current_score = lang_stats['CIDEr']
                 else:
                     current_score = - val_loss
+                print("Current score ", current_score)
 
                 best_flag = False
 
+                print("Best flag before ", best_flag)
+                print("Best val score ", best_val_score)
                 if best_val_score is None or current_score > best_val_score:
+                    print("Inside best score update function")
                     best_val_score = current_score
                     best_flag = True
+                print("Best flag after ", best_flag)
+                print("Best val score ", best_val_score)
 
                 # Dump miscalleous informations
                 infos['best_val_score'] = best_val_score
@@ -428,17 +432,19 @@ def train(opt):
                     save_checkpoint(model, infos, optimizer, append=str(iteration))
 
                 if best_flag:
+                    print("Saving best flag")
                     save_checkpoint(model, infos, optimizer, append='best')
 
-                dict_to_save = {}
-                dict_to_save['gen_captions'] = gen_captions_all
-                dict_to_save['greedy_captions'] = greedy_captions_all
-                gen_captions_all = {}
-                greedy_captions_all = {}
-                json.dump(dict_to_save, open(opt.checkpoint_path + '/captions_' + str(iteration) + '.json', 'w'))
+                # dict_to_save = {}
+                # dict_to_save['gen_captions'] = gen_captions_all
+                # dict_to_save['greedy_captions'] = greedy_captions_all
+                # gen_captions_all = {}
+                # greedy_captions_all = {}
+                # json.dump(dict_to_save, open(opt.checkpoint_path + '/captions_' + str(iteration) + '.json', 'w'))
 
             # Stop if reaching max epochs
             if epoch >= opt.max_epochs and opt.max_epochs != -1:
+                print("Exceeded max epochs")
                 break
         
         if cider_model is not None:
@@ -449,11 +455,11 @@ def train(opt):
             final_greedy_model_weights = list(model_greedy.parameters())
             assert initial_greedy_model_weights == final_greedy_model_weights
 
-        # if True:
-        #     final_dict = {}
-        #     final_dict['gen_captions'] = gen_captions_all
-        #     final_dict['greedy_captions'] = greedy_captions_all
-        #     json.dump(final_dict, open(opt.checkpoint_path + '/captions_all.json', 'w'))
+        if True:
+            final_dict = {}
+            final_dict['gen_captions'] = gen_captions_all
+            final_dict['greedy_captions'] = greedy_captions_all
+            json.dump(final_dict, open(opt.checkpoint_path + '/captions_all.json', 'w'))
 
     except:
         print('Save ckpt on exception ...')
@@ -462,11 +468,10 @@ def train(opt):
         stack_trace = traceback.format_exc()
         print(stack_trace)
         
-        # Dump captions
-        # final_dict = {}
-        # final_dict['gen_captions'] = gen_captions_all
-        # final_dict['greedy_captions'] = greedy_captions_all
-        # json.dump(final_dict, open(opt.checkpoint_path + '/captions_all.json', 'w'))
+        final_dict = {}
+        final_dict['gen_captions'] = gen_captions_all
+        final_dict['greedy_captions'] = greedy_captions_all
+        json.dump(final_dict, open(opt.checkpoint_path + '/captions_all.json', 'w'))
 
 opt = opts.parse_opt()
 

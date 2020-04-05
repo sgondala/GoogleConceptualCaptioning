@@ -6,7 +6,6 @@ from misc.utils import decode_sequence_to_dict
 from misc.slor_scoring import get_slor_rewards
 from misc.cider_scoring import get_self_critical_cider_reward_using_model
 from misc.vifidel_scoring import get_vifidel_rewards
-from eval_utils import language_eval
 
 class LossWrapper(torch.nn.Module):
     def __init__(self, model, opt, ix_to_word=None, cider_dataset=None, cider_model=None, language_model=None, language_model_tokenizer = None, unigram_prob_dict=None, glove_embedding=None, glove_word_to_ix=None, ground_truth_object_annotations=None, model_greedy=None, is_classification_cider_model=False, classification_threshold = 0.999):
@@ -14,13 +13,8 @@ class LossWrapper(torch.nn.Module):
         self.opt = opt
         self.model = model
         self.model_greedy = model_greedy
-        if opt.label_smoothing > 0:
-            assert False
-            self.crit = utils.LabelSmoothing(smoothing=opt.label_smoothing)
-        else:
-            self.crit = utils.LanguageModelCriterion()
+        self.crit = utils.LanguageModelCriterion()
         self.rl_crit = utils.RewardCriterion()
-        self.struc_crit = utils.StructureLosses(opt)
         self.retrieval_reward_weight = 0
         self.ix_to_word = ix_to_word
         self.cider_dataset = cider_dataset
@@ -53,7 +47,7 @@ class LossWrapper(torch.nn.Module):
         if not sc_flag:
             loss = self.crit(self.model(fc_feats, att_feats, labels, att_masks), labels[:,1:], masks[:,1:], reduction=reduction)        
         else:
-            print("Performing self critical training")
+            # print("Performing self critical training")
             self.model.eval()
             with torch.no_grad():
                 if self.model_greedy is None:

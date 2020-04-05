@@ -5,11 +5,11 @@ def parse_opt():
     # Data input settings
     parser.add_argument('--input_json', type=str, default='data/cocotalk_with_cc_vocab_rm_8_same_order_for_self_critical.json',
                     help='path to the json file containing additional info and vocab')
-    parser.add_argument('--input_fc_dir', type=str, default='/srv/share2/sgondala/tmp/trainval_36/python3_stuff/trainval_resnet101_faster_rcnn_genome_36.tsv',
+    parser.add_argument('--input_fc_dir', type=str, default='/srv/share2/sgondala/data_for_captioning_models/trainval_resnet101_faster_rcnn_genome_36.tsv',
                     help='path to the directory containing the preprocessed fc feats')
-    parser.add_argument('--input_att_dir', type=str, default='/srv/share2/sgondala/tmp/trainval_36/python3_stuff/trainval_resnet101_faster_rcnn_genome_36.tsv',
+    parser.add_argument('--input_att_dir', type=str, default='/srv/share2/sgondala/data_for_captioning_models/trainval_resnet101_faster_rcnn_genome_36.tsv',
                     help='path to the directory containing the preprocessed att feats')
-    parser.add_argument('--input_box_dir', type=str, default='data/cocotalk_box',
+    parser.add_argument('--input_box_dir', type=str, default='/srv/share2/sgondala/data_for_captioning_models/',
                     help='path to the directory containing the boxes of att feats')
     parser.add_argument('--input_label_h5', type=str, default='data/cocotalk_with_cc_vocab.h5',
                     help='path to the h5file containing the preprocessed dataset')
@@ -82,8 +82,8 @@ def parse_opt():
                     help='Remove bad endings')
 
     #Optimization: for the Language Model
-    parser.add_argument('--optim', type=str, default='adam',
-                    help='what update to use? rmsprop|sgd|sgdmom|adagrad|adam')
+    # parser.add_argument('--optim', type=str, default='adam',
+                    # help='what update to use? rmsprop|sgd|sgdmom|adagrad|adam')
     parser.add_argument('--learning_rate', type=float, default=5e-5,
                     help='learning rate')
     parser.add_argument('--learning_rate_decay_start', type=int, default=0, 
@@ -190,11 +190,11 @@ def parse_opt():
     parser.add_argument('--use_ref_caps', action='store_true')
     parser.add_argument('--save_all_train_captions', action='store_true')
     parser.add_argument('--eval_split_during_train', type=str, default='val')
-    parser.add_argument('--use_base_model_for_greedy', action='store_true')
+    # parser.add_argument('--use_base_model_for_greedy', action='store_true')
     parser.add_argument('--id_language_eval', type=str, default='')
     parser.add_argument('--is_classification_cider_model', type=int, default=0)
     parser.add_argument('--classification_threshold', type=float, default=0.999)
-    parser.add_argument('--do_not_generate_cider_plots', action='store_false')
+    parser.add_argument('--do_not_generate_cider_plots', action='store_true')
    # parser.add_argument('--id_language_eval', type=str, default='')
 
     add_vse_options(parser)
@@ -292,9 +292,9 @@ def add_eval_options(parser):
     parser.add_argument('--image_root', type=str, default='', 
                     help='In case the image paths have to be preprended with a root path to an image folder')
     # For evaluation on MSCOCO images from some split:
-    parser.add_argument('--input_fc_dir', type=str, default='/srv/share2/sgondala/tmp/trainval_36/python3_stuff/trainval_resnet101_faster_rcnn_genome_36.tsv',
+    parser.add_argument('--input_fc_dir', type=str, default='/srv/share2/sgondala/data_for_captioning_models/trainval_resnet101_faster_rcnn_genome_36.tsv',
                     help='path to the h5file containing the preprocessed dataset')
-    parser.add_argument('--input_att_dir', type=str, default='/srv/share2/sgondala/tmp/trainval_36/python3_stuff/trainval_resnet101_faster_rcnn_genome_36.tsv',
+    parser.add_argument('--input_att_dir', type=str, default='/srv/share2/sgondala/data_for_captioning_models/trainval_resnet101_faster_rcnn_genome_36.tsv',
                     help='path to the h5file containing the preprocessed dataset')
     parser.add_argument('--input_box_dir', type=str, default='',
                     help='path to the h5file containing the preprocessed dataset')

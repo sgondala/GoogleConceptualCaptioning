@@ -34,14 +34,14 @@ def get_self_critical_cider_reward_using_model(cider_dataset, model, captions_gr
     cider_dataset.captions = captions_greedy
     cider_greedy = get_single_cider_scores(cider_dataset, model, is_classification_model, classification_threshold)
     average_greedy_cider = cider_greedy.mean()
-    if not is_classification_model:
-        cider_greedy = clips_cider_scores(cider_greedy)
+    # if not is_classification_model:
+    #     cider_greedy = clips_cider_scores(cider_greedy)
 
     cider_dataset.captions = captions_gen
     cider_gen = get_single_cider_scores(cider_dataset, model, is_classification_model, classification_threshold)
     average_gen_cider = cider_gen.mean()
-    if not is_classification_model:
-        cider_gen = clips_cider_scores(cider_gen)
+    # if not is_classification_model:
+    #     cider_gen = clips_cider_scores(cider_gen)
 
     assert len(cider_gen) == len(cider_greedy)
     scores = (cider_gen - cider_greedy) * opt.cider_reward_weight

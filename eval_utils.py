@@ -27,28 +27,28 @@ def count_bad(sen):
     else:
         return 0
 
-def language_eval(dataset, preds, preds_n, eval_kwargs, split):
+def language_eval(dataset, preds, preds_n, eval_kwargs, cache_file_key):
     model_id = eval_kwargs.get('id_language_eval', '')
     eval_oracle = eval_kwargs.get('eval_oracle', 0)
     
     import sys
     sys.path.append("coco-caption")
-    annFile = 'coco-caption/annotations/captions_val2014.json'
+    annFile = 'coco-caption/annotations/captions_all2014.json'
+    # annFile = 'coco-caption/annotations/nocaps_ref_final_with_id.json'
+
     from pycocotools.coco import COCO
     from pycocoevalcap.eval import COCOEvalCap
 
     if not os.path.isdir('eval_results'):
         os.mkdir('eval_results')
-    cache_path = os.path.join('eval_results/', '.cache_'+ model_id + '_' + split + '.json')
+    cache_path = os.path.join('eval_results/', '.cache_'+ model_id + '_' + cache_file_key + '.json')
 
     coco = COCO(annFile)
     valids = coco.getImgIds()
 
-    # filter results to only those in MSCOCO validation set (will be about a third)
     preds_filt = [p for p in preds if p['image_id'] in valids]
-    # mean_perplexity = sum([_['perplexity'] for _ in preds_filt]) / len(preds_filt)
-    # mean_entropy = sum([_['entropy'] for _ in preds_filt]) / len(preds_filt)
-    print('using %d/%d predictions' % (len(preds_filt), len(preds)))
+    print("Annotations file name " + cache_path)
+    print('Using %d/%d predictions' % (len(preds_filt), len(preds)))
     json.dump(preds_filt, open(cache_path, 'w')) # serialize to temporary json file. Sigh, COCO API...
 
     cocoRes = coco.loadRes(cache_path)
@@ -62,36 +62,14 @@ def language_eval(dataset, preds, preds_n, eval_kwargs, split):
         out[metric] = score
     
     out['CIDErArary'] = cocoEval.evalArray['CIDEr']
-    assert len(out['CIDErArary']) == len(preds)
-    # Add mean perplexity
-    # out['perplexity'] = mean_perplexity
-    # out['entropy'] = mean_entropy
-
-    # imgToEval = cocoEval.imgToEval
-    # for k in list(imgToEval.values())[0]['SPICE'].keys():
-    #     if k != 'All':
-    #         out['SPICE_'+k] = np.array([v['SPICE'][k]['f'] for v in imgToEval.values()])
-    #         out['SPICE_'+k] = (out['SPICE_'+k][out['SPICE_'+k]==out['SPICE_'+k]]).mean()
-    # for p in preds_filt:
-    #     image_id, caption = p['image_id'], p['caption']
-    #     imgToEval[image_id]['caption'] = caption
-
-    # if len(preds_n) > 0:
-    #     cache_path_n = os.path.join('eval_results/', '.cache_'+ model_id + '_' + split + '_n.json')
-    #     spice_n = eval_multi.eval_spice_n(preds_n, model_id, split)
-    #     out.update(spice_n['overall'])
-    #     div_stats = eval_multi.eval_div_stats(preds_n, model_id, split)
-    #     out.update(div_stats['overall'])
-    #     if eval_oracle:
-    #         oracle = eval_multi.eval_oracle(preds_n, model_id, split)
-    #     out.update(oracle['overall'])
-    #     with open(cache_path_n, 'w') as outfile:
-    #         json.dump({'spice_n': spice_n, 'div_stats': div_stats, 'oracle': oracle}, outfile)
-        
-    # out['bad_count_rate'] = sum([count_bad(_['caption']) for _ in preds_filt]) / float(len(preds_filt))
-    # outfile_path = os.path.join('eval_results/', model_id + '_' + split + '.json')
-    # with open(outfile_path, 'w') as outfile:
-    #     json.dump({'overall': out, 'imgToEval': imgToEval}, outfile)
+    if len(out['CIDErArary']) != len(preds):
+        final_dict_to_dump = {}
+        final_dict_to_dump['actual_preds'] = preds.tolist() if isinstance(preds, np.ndarray) else preds
+        final_dict_to_dump['filtered_preds'] = preds_filt.tolist() if isinstance(preds_filt, np.ndarray) else preds_filt
+        final_dict_to_dump['CIDErArary'] = out['CIDErArary'].tolist() if isinstance(out['CIDErArary'], np.ndarray) else out['CIDErArary']
+        final_dict_to_dump['valids'] = valids.tolist() if isinstance(valids, np.ndarray) else valids
+        json.dump(final_dict_to_dump, open('eval_results/.cache_'+ model_id + '_' + cache_file_key + '_final_dump.json', 'w'))
+        assert False
 
     return out
 
@@ -229,7 +207,8 @@ def eval_split(model, crit, loader, eval_kwargs={}):
             predictions.pop()
 
         if verbose:
-            print('evaluating validation preformance... %d/%d (%f)' %(ix0 - 1, ix1, loss))
+            pass
+            # print('evaluating validation preformance... %d/%d (%f)' %(ix0 - 1, ix1, loss))
 
         if data['bounds']['wrapped']:
             break
