@@ -138,6 +138,20 @@ class RewardCriterion(nn.Module):
 
         return output
 
+class PPOCriterion(nn.Module):
+    def __init__(self, clip_param):
+        # Taken from https://github.com/clu8/self-critical-ppo/blob/master/misc/utils.py
+        
+        super(PPOCriterion, self).__init__()
+        self.clip_param = clip_param # epsilon
+
+    def forward(self, old_logprobs_agg, new_logprobs_agg, seq, atarg):
+        ratio = torch.exp(new_logprobs_agg - old_logprobs_agg)
+        surr1 = ratio * atarg
+        surr2 = torch.clamp(ratio, 1 - self.clip_param, 1 + self.clip_param) * atarg
+        pol_surr = -torch.min(surr1, surr2).mean() # PPO's pessimistic surrogate (L^CLIP)
+        return pol_surr
+
 class StructureLosses(nn.Module):
     def __init__(self, opt):
         super(StructureLosses, self).__init__()

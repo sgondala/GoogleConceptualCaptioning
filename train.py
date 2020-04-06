@@ -56,6 +56,10 @@ def eval_cider_and_append_values(predictions, writer, key, start_iteration, batc
 def train(opt):
     # Deal with feature things before anything
     # print("Opt input", opt)
+    if opt.ppo and opt.drop_prob_lm > 0:
+        assert False, "Recommend setting dropout prob to 0 during PPO training"
+        # print('===== Highly recommend setting dropout prob to 0 during PPO training =====')
+
     opt.use_fc, opt.use_att = utils.if_use_feat(opt.caption_model)
     
     loader = DataLoader(opt)
@@ -178,12 +182,6 @@ def train(opt):
 
     lw_model = LossWrapper(model, opt, vocab, cider_dataset, cider_model, open_gpt_model, open_gpt_tokenizer, unigram_prob_dict, glove_embedding, glove_word_to_ix, ground_truth_object_annotations, model_greedy, opt.is_classification_cider_model, opt.classification_threshold).cuda()
     
-    dp_lw_model = torch.nn.DataParallel(lw_model)
-
-    epoch_done = True
-    # Assure in training mode
-    dp_lw_model.train()
-
     # if opt.noamopt:
     #     assert opt.caption_model == 'transformer', 'noamopt can only work with transformer'
     #     optimizer = utils.get_std_opt(model, factor=opt.noamopt_factor, warmup=opt.noamopt_warmup)
@@ -221,6 +219,12 @@ def train(opt):
 
     greedy_captions_since_last_checkpoint = []
     gen_captions_since_last_checkpoint = []
+
+    lw_model.set_optimizer(optimizer)
+
+    dp_lw_model = torch.nn.DataParallel(lw_model)
+    epoch_done = True
+    dp_lw_model.train()
 
     try:
         while True:
@@ -277,37 +281,12 @@ def train(opt):
             
             image_ids = data['image_ids']
             
-            optimizer.zero_grad()
+            # optimizer.zero_grad()
             model_out = dp_lw_model(fc_feats, att_feats, labels, masks, att_masks, data['gts'], torch.arange(0, len(data['gts'])), sc_flag, False, False, image_ids)
 
-            # if not drop_worst_flag:
             loss = model_out['loss'].mean()
-            # else:
-            #     loss = model_out['loss']
-            #     loss, idx = torch.topk(loss, k=int(loss.shape[0] * (1-opt.drop_worst_rate)), largest=False)
-            #     loss = loss.mean()
-
-            #     idx = set(idx.tolist())
-            #     for ii, s in enumerate(utils.decode_sequence(loader.get_vocab(), labels.cpu()[:, 1:])):
-            #         if ii not in idx:
-            #             print(s)
-
-            loss.backward()
-            utils.clip_gradient(optimizer, opt.grad_clip)
-            optimizer.step()
             train_loss = loss.item()
-            torch.cuda.synchronize()
             end = time.time()
-            # if struc_flag:
-            #     print("iter {} (epoch {}), train_loss = {:.3f}, lm_loss = {:.3f}, struc_loss = {:.3f}, time/batch = {:.3f}" \
-            #         .format(iteration, epoch, train_loss, model_out['lm_loss'].mean().item(), model_out['struc_loss'].mean().item(), end - start))
-            
-            # if not sc_flag:
-            #     print("iter {} (epoch {}), train_loss = {:.3f}, time/batch = {:.3f}" \
-            #         .format(iteration, epoch, train_loss, end - start))
-            # else:
-            #     print("iter {} (epoch {}), avg_reward = {:.3f}, time/batch = {:.3f}" \
-            #         .format(iteration, epoch, model_out['reward'].mean(), end - start))
 
             # Update the iteration and epoch
             iteration += 1

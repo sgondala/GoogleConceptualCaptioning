@@ -21,6 +21,7 @@ import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from torch.autograd import Variable
 import misc.utils as utils
 from torch.nn.utils.rnn import PackedSequence, pack_padded_sequence, pad_packed_sequence
 
@@ -110,10 +111,10 @@ class AttModel(CaptionModel):
         # embed fc and att feats
         fc_feats = self.fc_embed(fc_feats)
         att_feats = pack_wrapper(self.att_embed, att_feats, att_masks)
-
+        
         # Project the attention feats first to reduce memory and computation comsumptions.
         p_att_feats = self.ctx2att(att_feats)
-
+        
         return fc_feats, att_feats, p_att_feats, att_masks
 
     def _forward(self, fc_feats, att_feats, seq, att_masks=None):
@@ -152,7 +153,7 @@ class AttModel(CaptionModel):
         return outputs
 
     def get_logprobs_state(self, it, fc_feats, att_feats, p_att_feats, att_masks, state, output_logsoftmax=1):
-        # 'it' contains a word index
+
         xt = self.embed(it)
 
         output, state = self.core(xt, fc_feats, att_feats, p_att_feats, state, att_masks)
@@ -194,8 +195,44 @@ class AttModel(CaptionModel):
         # return the samples and their log likelihoods
         return seq.transpose(0, 1), seqLogprobs.transpose(0, 1)
 
-    def _sample(self, fc_feats, att_feats, att_masks=None, opt={}):
+    def get_seq_logprobs(self, fc_feats, att_feats, att_masks, seq):
+        batch_size = fc_feats.size(0)
+        state = self.init_hidden(batch_size)
 
+        p_fc_feats, p_att_feats, pp_att_feats, p_att_masks = self._prepare_feature(fc_feats, att_feats, att_masks)
+
+        seqLogprobs = fc_feats.new_zeros(batch_size, self.seq_length, self.vocab_size + 1)
+        
+        for t in range(self.seq_length + 1):
+            if t == 0: # input <bos>
+                it = fc_feats.new_zeros(batch_size, dtype=torch.long)
+
+            logprobs, state = self.get_logprobs_state(it, p_fc_feats, p_att_feats, pp_att_feats, p_att_masks, state)
+
+            # sample the next word
+            if t == self.seq_length: # skip if we achieve maximum length
+                break
+            
+            # it = torch.distributions.Categorical(logits=logprobs.detach()).sample()
+            it = seq[:,t]
+
+            # stop when all finished
+            if t == 0:
+                unfinished = it > 0
+            else:
+                unfinished = unfinished * (it > 0)
+            it = it * unfinished.type_as(it)
+            
+            # it = seq[:,t]
+            seqLogprobs[:,t] = logprobs
+            
+            # quit loop if all sequences have finished
+            if unfinished.sum() == 0:
+                break
+
+        return seqLogprobs
+
+    def _sample(self, fc_feats, att_feats, att_masks=None, opt={}):
         sample_max = opt.get('sample_max', 1)
         beam_size = opt.get('beam_size', 1)
         temperature = opt.get('temperature', 1.0)
@@ -293,7 +330,7 @@ class AttModel(CaptionModel):
                     logprobs = tmp
                 logprobs = logprobs / temperature
                 it = torch.distributions.Categorical(logits=logprobs.detach()).sample()
-                sampleLogprobs = logprobs.gather(1, it.unsqueeze(1)) # gather the logprobs at sampled positions
+                # sampleLogprobs = logprobs.gather(1, it.unsqueeze(1)) # gather the logprobs at sampled positions
 
             # stop when all finished
             if t == 0:

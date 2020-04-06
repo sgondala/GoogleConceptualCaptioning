@@ -196,6 +196,11 @@ def parse_opt():
     parser.add_argument('--classification_threshold', type=float, default=0.999)
     parser.add_argument('--do_not_generate_cider_plots', action='store_true')
    # parser.add_argument('--id_language_eval', type=str, default='')
+    
+    # PPO
+    parser.add_argument('--ppo', action='store_true')
+    parser.add_argument('--ppo_iters', type=int, default=5)
+    parser.add_argument('--ppo_clip_param', type=float, default=0.2)
 
     add_vse_options(parser)
 

@@ -110,7 +110,7 @@ SLOR - python train.py --batch_size 100 --learning_rate 5e-5 --checkpoint_path c
 
 VIFIDEL and SLOR - python train.py --batch_size 100 --learning_rate 5e-5 --checkpoint_path checkpoints/coco_sc_on_exp1_vifidel_and_slor_5e5/ --save_checkpoint_every 50 --val_images_use 5000 --max_epochs 10 --self_critical_after 0  --seq_per_img 1 --start_from checkpoints/coco_on_cc_rm_8_exp_1_3e5 --use_slor --use_vifidel --id_language_eval vifidel_and_slor
 
-CIDER Ref caps - python train.py --batch_size 100 --learning_rate 5e-5 --checkpoint_path checkpoints/coco_sc_on_exp1_cider_5e5_ref_caps/ --save_checkpoint_every 400 --val_images_use 5000 --max_epochs 30 --self_critical_after 0 --seq_per_img 1 --start_from checkpoints/coco_on_cc_rm_8_exp_1_3e5/  --use_cider --use_ref_caps --id_language_eval cider_ref_caps
+CIDER Ref caps - python train.py --batch_size 100 --learning_rate 5e-5 --checkpoint_path checkpoints/coco_sc_on_exp1_cider_5e5_ref_caps/ --save_checkpoint_every 400 --val_images_use 5000 --max_epochs 10 --self_critical_after 0 --seq_per_img 1 --start_from checkpoints/coco_on_cc_rm_8_exp_1_3e5/  --use_ref_caps --id_language_eval cider_ref_caps
 
 CIDER on COCO72 - python train.py --batch_size 100 --learning_rate 5e-5 --checkpoint_path checkpoints/coco_sc_on_exp1_cider_5e5_train_data_for_captions/ --save_checkpoint_every 500 --val_images_use 500 --max_epochs 4 --self_critical_after 0  --seq_per_img 1 --start_from checkpoints/coco_on_cc_rm_8_exp_1_3e5/ --use_cider --input_json data/cocotalk_with_cc_vocab_rm_8_same_order.json --id_language_eval cider_temp --language_eval 0 --losses_log_every 1
 
@@ -126,6 +126,11 @@ CIDER on regression full data - python train.py --batch_size 75 --learning_rate 
 CIDER and vifidel on regression full data - python train.py --batch_size 100 --learning_rate 5e-5 --checkpoint_path checkpoints/coco_sc_on_exp1_cider_and_vifidel_5e5_coco_minus_8_regression_mar_18_data_model_0/ --save_checkpoint_every 50 --val_images_use 5000 --max_epochs 10 --self_critical_after 0  --seq_per_img 1 --start_from checkpoints/coco_on_cc_rm_8_exp_1_3e5/ --use_cider --use_vifidel --id_language_eval coco_sc_on_exp1_cider_and_vifidel_5e5_coco_minus_8_regression_mar_18_data_model_0 --cider_model ../vilbert_beta/checkpoints/coco_minus_8_regression_mar_18_data/pytorch_model_0.bin
 
 CIDER and vifidel and slor on regression full data - python train.py --batch_size 75 --learning_rate 5e-5 --checkpoint_path checkpoints/coco_sc_on_exp1_cider_and_vifidel_and_slor_5e5_coco_minus_8_regression_mar_18_data_model_1/ --save_checkpoint_every 50 --val_images_use 5000 --max_epochs 10 --self_critical_after 0  --seq_per_img 1 --start_from checkpoints/coco_on_cc_rm_8_exp_1_3e5/ --use_cider --use_vifidel --use_slor --id_language_eval coco_sc_on_exp1_cider_and_vifidel_and_slor_5e5_coco_minus_8_regression_mar_18_data_model_1 --cider_model ../vilbert_beta/checkpoints/coco_minus_8_regression_mar_18_data/pytorch_model_1.bin
+
+CIDER refcaps ppo 
+
+python train.py --batch_size 100 --learning_rate 3e-5 --checkpoint_path checkpoints/coco_sc_on_exp1_cider_3e5_ref_caps_ppo/ --save_checkpoint_every 100 --val_images_use 5000 --max_epochs 10 --self_critical_after 0 --seq_per_img 1 --start_from checkpoints/coco_on_cc_rm_8_exp_1_3e5/  --use_ref_caps --id_language_eval checkpoints_coco_sc_on_exp1_cider_3e5_ref_caps_ppo --drop_prob_lm 0 --ppo 
+
 
 CIDER on nocaps - Just for testing the code
 

@@ -1,8 +1,9 @@
 import torch
+from torch.autograd import Variable
 import numpy as np
 import misc.utils as utils
 from misc.rewards import init_scorer, get_self_critical_reward
-from misc.utils import decode_sequence_to_dict
+from misc.utils import decode_sequence_to_dict, clip_gradient
 from misc.slor_scoring import get_slor_rewards
 from misc.cider_scoring import get_self_critical_cider_reward_using_model
 from misc.vifidel_scoring import get_vifidel_rewards
@@ -14,7 +15,7 @@ class LossWrapper(torch.nn.Module):
         self.model = model
         self.model_greedy = model_greedy
         self.crit = utils.LanguageModelCriterion()
-        self.rl_crit = utils.RewardCriterion()
+        self.rl_crit = utils.RewardCriterion() if not opt.ppo else utils.PPOCriterion(opt.ppo_clip_param)
         self.retrieval_reward_weight = 0
         self.ix_to_word = ix_to_word
         self.cider_dataset = cider_dataset
@@ -27,6 +28,7 @@ class LossWrapper(torch.nn.Module):
         self.ground_truth_object_annotations = ground_truth_object_annotations
         self.is_classification_cider_model = is_classification_cider_model
         self.classification_threshold = classification_threshold
+        self.optimizer = None
 
     def post_process(self, captions_list):
         ret_list = []
@@ -38,25 +40,92 @@ class LossWrapper(torch.nn.Module):
             new_dict['caption'] = caption
             ret_list.append(new_dict)
         return ret_list
+    
+    def set_optimizer(self, optimizer):
+        self.optimizer = optimizer
 
     def forward(self, fc_feats, att_feats, labels, masks, att_masks, gts, gt_indices,
                 sc_flag, struc_flag, drop_worst_flag, image_ids):
+
+        assert self.optimizer is not None
+        self.optimizer.zero_grad()
+
         out = {}
+        out['gen_captions'] = []
+        out['greedy_captions'] = []
+
         reduction = 'none' if drop_worst_flag else 'mean'
 
-        if not sc_flag:
-            loss = self.crit(self.model(fc_feats, att_feats, labels, att_masks), labels[:,1:], masks[:,1:], reduction=reduction)        
-        else:
-            # print("Performing self critical training")
+        if self.opt.ppo and sc_flag: # PPO self-critical update
             self.model.eval()
             with torch.no_grad():
-                if self.model_greedy is None:
-                    greedy_res, _ = self.model(fc_feats, att_feats, att_masks, mode='sample')
+                greedy_res, _ = self.model_greedy(fc_feats, att_feats, att_masks, mode='sample')
+
+            self.model.train()
+            gen_result, old_logprobs = self.model(fc_feats, att_feats, att_masks, opt={'sample_max':0}, mode='sample')
+
+            old_logprobs = old_logprobs.gather(2, gen_result.unsqueeze(2)).squeeze(2)
+            assert old_logprobs.shape == gen_result.shape
+
+            old_logprobs = old_logprobs.detach()
+            old_logprobs[:, 1:] = old_logprobs[:, 1:] * Variable((gen_result[:, :-1] > 0).float(), requires_grad=False)
+            old_logprobs_agg = old_logprobs.sum(dim=1)
+
+            length_of_output = gen_result.shape[1]
+
+            reward = np.zeros((fc_feats.shape[0], length_of_output))
+            score = None 
+
+            if self.opt.use_ref_caps:
+                gts = [gts[_] for _ in gt_indices.tolist()]
+                reward = get_self_critical_reward(greedy_res, gts, gen_result, self.opt)
+                out['reward'] = reward[:,0].mean()
+                score = reward[:, 0]
+
+            else:
+                assert False, 'TODO'
+                reward = get_self_critical_reward(model, fc_feats, att_feats, data, gen_result)
+
+            for ppo_iter in range(self.opt.ppo_iters):
+                new_logprobs = self.model.get_seq_logprobs(fc_feats, att_feats, att_masks, gen_result)
+                new_logprobs = new_logprobs.gather(2, gen_result.unsqueeze(2)).squeeze(2)
+                new_logprobs[:, 1:] = new_logprobs[:, 1:] * Variable((gen_result[:, :-1] > 0).float(), requires_grad=False)
+
+                new_logprobs_agg = new_logprobs.sum(dim=1)
+                loss = self.rl_crit(old_logprobs_agg, new_logprobs_agg, gen_result, Variable(torch.from_numpy(score).float().cuda(), requires_grad=False))
+
+                self.optimizer.zero_grad()
+                if ppo_iter < self.opt.ppo_iters - 1:
+                    loss.backward(retain_graph=True)
                 else:
-                    greedy_res, _ = self.model_greedy(fc_feats, att_feats, att_masks, mode='sample')
+                    loss.backward()
+                self.optimizer.step()
+                torch.cuda.synchronize()
+
+        elif not sc_flag:
+            loss = self.crit(self.model(fc_feats, att_feats, labels, att_masks), labels[:,1:], masks[:,1:], reduction=reduction)
+
+            # Backprop
+            self.optimizer.zero_grad()
+            loss.backward()
+            utils.clip_gradient(self.optimizer, self.opt.grad_clip)
+            self.optimizer.step()
+            train_loss = loss.item()
+            torch.cuda.synchronize()
+        
+        else:
+            self.model.eval()
+            with torch.no_grad():
+                greedy_res, _ = self.model_greedy(fc_feats, att_feats, att_masks, mode='sample')
 
             self.model.train()
             gen_result, sample_logprobs = self.model(fc_feats, att_feats, att_masks, opt={'sample_max':0}, mode='sample')
+
+            # Assuming 1 seq per image
+            # We have token and it's log probability - not previous or next step's
+            # Gen result shape  torch.Size([batch_size, 20 (length of caption)])
+            # Sample logprobs shape  torch.Size([batch_size, 20, 16304 (size of vocab)])
+
             gts = [gts[_] for _ in gt_indices.tolist()]
             
             greedy_captions = decode_sequence_to_dict(self.ix_to_word, greedy_res, image_ids)
@@ -94,6 +163,14 @@ class LossWrapper(torch.nn.Module):
             out['greedy_captions'] = self.post_process(greedy_captions)
 
             loss = self.rl_crit(sample_logprobs, gen_result.data, reward, reduction=reduction)
+
+            # Backprop
+            self.optimizer.zero_grad()
+            loss.backward()
+            utils.clip_gradient(self.optimizer, self.opt.grad_clip)
+            self.optimizer.step()
+            train_loss = loss.item()
+            torch.cuda.synchronize()
 
         out['loss'] = loss
         return out
