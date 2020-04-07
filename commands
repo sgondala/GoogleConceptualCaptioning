@@ -127,10 +127,11 @@ CIDER and vifidel on regression full data - python train.py --batch_size 100 --l
 
 CIDER and vifidel and slor on regression full data - python train.py --batch_size 75 --learning_rate 5e-5 --checkpoint_path checkpoints/coco_sc_on_exp1_cider_and_vifidel_and_slor_5e5_coco_minus_8_regression_mar_18_data_model_1/ --save_checkpoint_every 50 --val_images_use 5000 --max_epochs 10 --self_critical_after 0  --seq_per_img 1 --start_from checkpoints/coco_on_cc_rm_8_exp_1_3e5/ --use_cider --use_vifidel --use_slor --id_language_eval coco_sc_on_exp1_cider_and_vifidel_and_slor_5e5_coco_minus_8_regression_mar_18_data_model_1 --cider_model ../vilbert_beta/checkpoints/coco_minus_8_regression_mar_18_data/pytorch_model_1.bin
 
-CIDER refcaps ppo 
+CIDER refcaps ppo - python train.py --batch_size 100 --learning_rate 3e-5 --checkpoint_path checkpoints/coco_sc_on_exp1_cider_3e5_ref_caps_ppo/ --save_checkpoint_every 100 --val_images_use 5000 --max_epochs 10 --self_critical_after 0 --seq_per_img 1 --start_from checkpoints/coco_on_cc_rm_8_exp_1_3e5/  --use_ref_caps --id_language_eval checkpoints_coco_sc_on_exp1_cider_3e5_ref_caps_ppo --drop_prob_lm 0 --ppo 
 
-python train.py --batch_size 100 --learning_rate 3e-5 --checkpoint_path checkpoints/coco_sc_on_exp1_cider_3e5_ref_caps_ppo/ --save_checkpoint_every 100 --val_images_use 5000 --max_epochs 10 --self_critical_after 0 --seq_per_img 1 --start_from checkpoints/coco_on_cc_rm_8_exp_1_3e5/  --use_ref_caps --id_language_eval checkpoints_coco_sc_on_exp1_cider_3e5_ref_caps_ppo --drop_prob_lm 0 --ppo 
+CIDER cider model PPO - python train.py --batch_size 50 --learning_rate 3e-5 --checkpoint_path checkpoints/coco_sc_on_exp1_cider_3e5_apr_3_model_2_ppo/ --save_checkpoint_every 100 --val_images_use 5000 --max_epochs 3 --self_critical_after 0  --seq_per_img 1 --start_from checkpoints/coco_on_cc_rm_8_exp_1_3e5/ --use_cider --id_language_eval checkpoints_coco_sc_on_exp1_cider_3e5_apr_3_model_2_ppo --cider_model ../hard_negative_all_outputs_Apr_3/pytorch_model_2.bin --ppo --drop_prob_lm 0 --do_not_generate_cider_plots
 
+CIDER cider model reinforce - python train.py --batch_size 50 --learning_rate 3e-5 --checkpoint_path checkpoints/coco_sc_on_exp1_cider_3e5_apr_3_model_2_reinforce/ --save_checkpoint_every 100 --val_images_use 5000 --max_epochs 3 --self_critical_after 0  --seq_per_img 1 --start_from checkpoints/coco_on_cc_rm_8_exp_1_3e5/ --use_cider --id_language_eval checkpoints_coco_sc_on_exp1_cider_3e5_apr_3_model_2_reinforce --cider_model ../hard_negative_all_outputs_Apr_3/pytorch_model_2.bin
 
 CIDER on nocaps - Just for testing the code
 

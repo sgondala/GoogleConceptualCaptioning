@@ -57,6 +57,8 @@ class LossWrapper(torch.nn.Module):
         reduction = 'none' if drop_worst_flag else 'mean'
 
         if self.opt.ppo and sc_flag: # PPO self-critical update
+            # PPO code taken from https://github.com/clu8/self-critical-ppo
+
             self.model.eval()
             with torch.no_grad():
                 greedy_res, _ = self.model_greedy(fc_feats, att_feats, att_masks, mode='sample')
@@ -64,12 +66,21 @@ class LossWrapper(torch.nn.Module):
             self.model.train()
             gen_result, old_logprobs = self.model(fc_feats, att_feats, att_masks, opt={'sample_max':0}, mode='sample')
 
+            # The above function returns prob of *all tokens* at each step
+            # We need to pick the probabiliity of selected token
             old_logprobs = old_logprobs.gather(2, gen_result.unsqueeze(2)).squeeze(2)
             assert old_logprobs.shape == gen_result.shape
 
             old_logprobs = old_logprobs.detach()
             old_logprobs[:, 1:] = old_logprobs[:, 1:] * Variable((gen_result[:, :-1] > 0).float(), requires_grad=False)
             old_logprobs_agg = old_logprobs.sum(dim=1)
+            
+            gts = [gts[_] for _ in gt_indices.tolist()]
+            greedy_captions = decode_sequence_to_dict(self.ix_to_word, greedy_res, image_ids)
+            gen_captions = decode_sequence_to_dict(self.ix_to_word, gen_result, image_ids)
+
+            out['gen_captions'] = self.post_process(gen_captions)
+            out['greedy_captions'] = self.post_process(greedy_captions)
 
             length_of_output = gen_result.shape[1]
 
@@ -77,14 +88,21 @@ class LossWrapper(torch.nn.Module):
             score = None 
 
             if self.opt.use_ref_caps:
-                gts = [gts[_] for _ in gt_indices.tolist()]
                 reward = get_self_critical_reward(greedy_res, gts, gen_result, self.opt)
                 out['reward'] = reward[:,0].mean()
-                score = reward[:, 0]
 
             else:
-                assert False, 'TODO'
-                reward = get_self_critical_reward(model, fc_feats, att_feats, data, gen_result)
+                if self.opt.use_cider:
+                    cider_reward, average_greedy_cider, average_gen_cider = get_self_critical_cider_reward_using_model(self.cider_dataset, self.cider_model, greedy_captions, gen_captions, self.opt, length_of_output, self.is_classification_cider_model, self.classification_threshold)
+                    assert cider_reward.shape == reward.shape
+                    reward += cider_reward
+                    out['average_greedy_cider'] = average_greedy_cider
+                    out['average_gen_cider'] = average_gen_cider
+                    out['reward'] = reward[:,0].mean()
+                else:
+                    assert False, 'Use cider atleast'
+
+            score = reward[:, 0]
 
             for ppo_iter in range(self.opt.ppo_iters):
                 new_logprobs = self.model.get_seq_logprobs(fc_feats, att_feats, att_masks, gen_result)
@@ -92,7 +110,7 @@ class LossWrapper(torch.nn.Module):
                 new_logprobs[:, 1:] = new_logprobs[:, 1:] * Variable((gen_result[:, :-1] > 0).float(), requires_grad=False)
 
                 new_logprobs_agg = new_logprobs.sum(dim=1)
-                loss = self.rl_crit(old_logprobs_agg, new_logprobs_agg, gen_result, Variable(torch.from_numpy(score).float().cuda(), requires_grad=False))
+                loss = self.rl_crit(old_logprobs_agg, new_logprobs_agg, Variable(torch.from_numpy(score).float().cuda(), requires_grad=False))
 
                 self.optimizer.zero_grad()
                 if ppo_iter < self.opt.ppo_iters - 1:
@@ -114,6 +132,7 @@ class LossWrapper(torch.nn.Module):
             torch.cuda.synchronize()
         
         else:
+            # SC reinforce
             self.model.eval()
             with torch.no_grad():
                 greedy_res, _ = self.model_greedy(fc_feats, att_feats, att_masks, mode='sample')

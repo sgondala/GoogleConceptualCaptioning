@@ -36,30 +36,20 @@ def add_summary_value(writer, key, value, iteration):
         writer.add_scalar(key, value, iteration)
 
 def eval_cider_and_append_values(predictions, writer, key, start_iteration, batch_size, losses_log_every, opt, cache_file_key):
-    # TODO - This hardcodes to coco val. Take care
     out = language_eval(None, predictions, None, {'id_language_eval': opt.id_language_eval}, cache_file_key)
     cider_array = np.array(out['CIDErArary'])
-    # print("Length of cider array ", len(cider_array))
-
+    
     end_number = 0
     for i in range(math.ceil(len(cider_array) * 1.0 /batch_size)):
         end_number = i
-        # print("Index in eval cider", i)
         start_index = i*batch_size
         end_index = i*batch_size + batch_size
         cider_avg = cider_array[start_index:end_index].mean()
-        # print(key, cider_avg, start_iteration + (i + 1)*losses_log_every)
         add_summary_value(writer, key, cider_avg, start_iteration + (i + 1)*losses_log_every)
     
     return start_iteration + (end_number + 1) * losses_log_every
 
 def train(opt):
-    # Deal with feature things before anything
-    # print("Opt input", opt)
-    if opt.ppo and opt.drop_prob_lm > 0:
-        assert False, "Recommend setting dropout prob to 0 during PPO training"
-        # print('===== Highly recommend setting dropout prob to 0 during PPO training =====')
-
     opt.use_fc, opt.use_att = utils.if_use_feat(opt.caption_model)
     
     loader = DataLoader(opt)
@@ -84,6 +74,7 @@ def train(opt):
         if os.path.isfile(os.path.join(opt.start_from, 'histories_'+opt.id+'.pkl')):
             with open(os.path.join(opt.start_from, 'histories_'+opt.id+'.pkl'), 'rb') as f:
                 histories = utils.pickle_load(f)
+    
     infos['iter'] = 0
     infos['epoch'] = 0
     infos['iterators'] = loader.iterators
@@ -91,8 +82,9 @@ def train(opt):
     infos['vocab'] = loader.get_vocab()
     infos['opt'] = opt
 
-    iteration = infos.get('iter', 0)
-    epoch = infos.get('epoch', 0)
+    iteration = infos.get('iter', 0) # 0
+    previous_iteration_losses_logged = 0
+    epoch = infos.get('epoch', 0) # 0
 
     val_result_history = histories.get('val_result_history', {})
     loss_history = histories.get('loss_history', {})
@@ -101,11 +93,9 @@ def train(opt):
 
     loader.iterators = infos.get('iterators', loader.iterators)
     loader.split_ix = infos.get('split_ix', loader.split_ix)
-    # best_val_score = None
     best_val_score = -10000000
     if opt.load_best_score == 1:
         best_val_score = -10000000
-        # best_val_score = infos.get('best_val_score', None)
 
     opt.vocab = loader.get_vocab()
     model = models.setup(opt).cuda()
@@ -253,16 +243,6 @@ def train(opt):
                 else:
                     sc_flag = False
                 
-                # if opt.structure_after != -1 and epoch >= opt.structure_after:
-                #     struc_flag = True
-                #     init_scorer(opt.cached_tokens)
-                # else:
-                #     struc_flag = False
-                # if opt.drop_worst_after != -1 and epoch >= opt.drop_worst_after:
-                #     drop_worst_flag = True
-                # else:
-                #     drop_worst_flag = False
-
                 epoch_done = False
                     
             # start = time.time()
@@ -270,8 +250,7 @@ def train(opt):
             if iteration % 100 == 0:
                 print("Iteration number ", iteration)
             data = loader.get_batch('train')
-            # print('Read data:', time.time() - start)
-
+            
             torch.cuda.synchronize()
             start = time.time()
 
@@ -281,7 +260,6 @@ def train(opt):
             
             image_ids = data['image_ids']
             
-            # optimizer.zero_grad()
             model_out = dp_lw_model(fc_feats, att_feats, labels, masks, att_masks, data['gts'], torch.arange(0, len(data['gts'])), sc_flag, False, False, image_ids)
 
             loss = model_out['loss'].mean()
@@ -296,7 +274,7 @@ def train(opt):
                 print("Epoch Done")
 
             # Write the training loss summary
-            if (iteration % opt.losses_log_every == 0):
+            if ((iteration - 1) % opt.losses_log_every == 0):
                 add_summary_value(tb_summary_writer, 'train_loss', train_loss, iteration)
                 add_summary_value(tb_summary_writer, 'learning_rate', opt.current_lr, iteration)
                 if sc_flag:
@@ -326,7 +304,7 @@ def train(opt):
             infos['split_ix'] = loader.split_ix
             
             # make evaluation on validation set, and save model
-            if (iteration % opt.save_checkpoint_every == 0):
+            if ((iteration - 1) % opt.save_checkpoint_every == 0):
                 print("Calculating validation score for val data")
                 
                 eval_kwargs = {'split': 'val',
@@ -355,49 +333,42 @@ def train(opt):
                 # Write validation result into summary
                 add_summary_value(tb_summary_writer, 'validation loss', val_loss, iteration)
                 if lang_stats is not None:
-                    # for k, v in lang_stats.items():
-                    #     print(k, v)
                     add_summary_value(tb_summary_writer, 'CIDEr', lang_stats['CIDEr'], iteration)
                 
                 if train_lang_stats is not None:
-                    # for k, v in lang_stats.items():
                     add_summary_value(tb_summary_writer, 'CIDEr_train', train_lang_stats['CIDEr'], iteration)
 
                 val_result_history[iteration] = {'loss': val_loss, 'lang_stats': lang_stats, 'predictions': predictions}
 
-                if iteration != 1:
+                # if iteration != 1:
+                if True:
                     if not opt.do_not_generate_cider_plots:
                         # Calculate actual cider values of previous iterations
                         # Doing this here to take advantage of batching
-                        
-                        end_iteration_val = eval_cider_and_append_values(greedy_captions_since_last_checkpoint, tb_summary_writer, 'greedy_generated_captions_actual_cider_scores', iteration - opt.save_checkpoint_every, opt.batch_size, opt.losses_log_every, opt, 'greedy_captions')
+                        start_iteration_number = previous_iteration_losses_logged
+
+                        end_iteration_val = eval_cider_and_append_values(greedy_captions_since_last_checkpoint, tb_summary_writer, 'greedy_generated_captions_actual_cider_scores', start_iteration_number, opt.batch_size, opt.losses_log_every, opt, 'greedy_captions')
                         assert end_iteration_val == iteration, str(end_iteration_val) + ',' + str(iteration)
 
-                        end_iteration_val = eval_cider_and_append_values(gen_captions_since_last_checkpoint, tb_summary_writer, 'gen_generated_captions_actual_cider_scores', iteration - opt.save_checkpoint_every, opt.batch_size, opt.losses_log_every, opt, 'gen_captions')
+                        end_iteration_val = eval_cider_and_append_values(gen_captions_since_last_checkpoint, tb_summary_writer, 'gen_generated_captions_actual_cider_scores', start_iteration_number, opt.batch_size, opt.losses_log_every, opt, 'gen_captions')
                         assert end_iteration_val == iteration
+
+                        previous_iteration_losses_logged = iteration
 
                 greedy_captions_since_last_checkpoint = []
                 gen_captions_since_last_checkpoint = []
 
-                # Save model if is improving on validation result
-                
-                print("Cider stats ", lang_stats['CIDEr'])
+                # Save model if is improving on validation result    
                 if opt.language_eval == 1:
                     current_score = lang_stats['CIDEr']
                 else:
                     current_score = - val_loss
-                print("Current score ", current_score)
 
                 best_flag = False
 
-                print("Best flag before ", best_flag)
-                print("Best val score ", best_val_score)
                 if best_val_score is None or current_score > best_val_score:
-                    print("Inside best score update function")
                     best_val_score = current_score
                     best_flag = True
-                print("Best flag after ", best_flag)
-                print("Best val score ", best_val_score)
 
                 # Dump miscalleous informations
                 infos['best_val_score'] = best_val_score
@@ -423,7 +394,6 @@ def train(opt):
 
             # Stop if reaching max epochs
             if epoch >= opt.max_epochs and opt.max_epochs != -1:
-                print("Exceeded max epochs")
                 break
         
         if cider_model is not None:
@@ -456,5 +426,8 @@ opt = opts.parse_opt()
 
 assert opt.batch_size % opt.losses_log_every == 0
 assert len(opt.id_language_eval) > 0
+
+if opt.ppo and opt.drop_prob_lm > 0:
+    assert False, "Set dropout prob to 0 during PPO training"
 
 train(opt)

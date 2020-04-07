@@ -145,7 +145,7 @@ class PPOCriterion(nn.Module):
         super(PPOCriterion, self).__init__()
         self.clip_param = clip_param # epsilon
 
-    def forward(self, old_logprobs_agg, new_logprobs_agg, seq, atarg):
+    def forward(self, old_logprobs_agg, new_logprobs_agg, atarg):
         ratio = torch.exp(new_logprobs_agg - old_logprobs_agg)
         surr1 = ratio * atarg
         surr2 = torch.clamp(ratio, 1 - self.clip_param, 1 + self.clip_param) * atarg
