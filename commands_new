@@ -1,0 +1,79 @@
+COCO split
+
+COCO80 train (80k)
+    - COCO72 train (70k)
+    - COCO8 train (12k)
+        - COCO8_val_val (6k)
+        - COCO8_val_test (6k)
+
+COCO80 val (40k)
+    - COCO80_val_val (20k)
+    - COCO80_val_test (20k)
+
+Cocotalk files - 
+
+cocotalk_coco_80_val_as_train.json - Complete COCO80 val as train
+cocotalk_with_cc_vocab_rm_8_same_order_for_self_critical.json - COCO80_val_val as train and COCO80_val_test as val
+cocotalk_with_cc_vocab_rm_8_same_order.json - COCO72 train as train and COCO72 val as val
+cocotalk_with_coco_80_val_test_as_train.json - COCO80_val_test as train
+
+COCO8 splits - COCO8 train, COCO8 val_val, COCO8 val_test
+
+cocotalk_with_coco_8_as_train.json - COCO8_train as train
+cocotalk_with_coco_8_val_test_as_train.json - COCO8_val_test as train
+cocotalk_coco8_split_as_train_val.json - COCO8_val_val as train and COCO80_val_test as val
+
+Checkpoint saving 
+
+model.pth (Starts from here)
+model-best
+model-train-best
+
+--save_all_checkpoints (No need to use this in general)
+
+Base models trained using CELoss - 
+
+COCO CE loss (Rachel) - python train.py --batch_size 100 --learning_rate 3e-5 --checkpoint_path checkpoints/coco_on_base_rm_8_exp_1_3e5_Apr_14/ --save_checkpoint_every 300 --seq_per_img 5 --val_images_use 5000 --max_epochs 6 --id_language_eval checkpoints_coco_on_base_rm_8_exp_1_3e5_Apr_14 --input_json data/cocotalk_with_cc_vocab_rm_8_same_order.json --losses_log_every 10 --language_eval 0 --do_not_generate_cider_plots --self_critical_after -1 --drop_prob_lm 0.5
+
+COCO CE loss on CC (Sashank) - python train.py --batch_size 100 --learning_rate 3e-5 --checkpoint_path checkpoints/coco_on_cc_rm_8_exp_1_3e5_Apr_14/ --save_checkpoint_every 300 --seq_per_img 5 --val_images_use 5000 --max_epochs 6 --id_language_eval checkpoints_coco_on_cc_rm_8_exp_1_3e5_Apr_14 --input_json data/cocotalk_with_cc_vocab_rm_8_same_order.json --losses_log_every 10 --language_eval 0 --start_from checkpoints/conceptual_base_on_att2in/ --do_not_generate_cider_plots --self_critical_after -1 --drop_prob_lm 0.5
+
+Models built on top - 
+
+Base - Nothing to do here
+
+Fill in - --start_from, --cider_model
+
+Base + SC on COCO72 train using GT - python train.py --batch_size 50 --learning_rate 5e-6 --checkpoint_path checkpoints/coco_sc_on_coco72_ref_caps_5e6_ppo/ --save_checkpoint_every 10 --val_images_use 5000 --max_epochs 3 --start_from checkpoints/ --use_ref_caps --input_json data/cocotalk_with_cc_vocab_rm_8_same_order.json --id_language_eval checkpoints_coco_sc_on_coco72_ref_caps_5e6_ppo --losses_log_every 5
+
+SC training using CIDEr predictor model on COCO8-val-val - python train.py --batch_size 50 --learning_rate 5e-6 --checkpoint_path checkpoints/coco_8_val_val_sc_5e6_on_base_cider_model_ppo --save_checkpoint_every 10 --val_images_use 5000 --max_epochs 3 --start_from checkpoints/ --use_cider --id_language_eval checkpoints_coco_8_val_val_sc_5e6_on_base_cider_model_ppo --cider_model  --losses_log_every 5 --input_json data/cocotalk_coco8_split_as_train_val.json
+
+SC training on CIDEr predictor model on COCO8-val-test - python train.py --batch_size 50 --learning_rate 5e-6 --checkpoint_path checkpoints/coco_8_val_test_sc_5e6_on_base_cider_model_ppo --save_checkpoint_every 10 --val_images_use 5000 --max_epochs 3 --start_from checkpoints/ --use_cider --id_language_eval checkpoints_coco_8_val_test_sc_5e6_on_base_cider_model_ppo --cider_model  --losses_log_every 5 --input_json data/cocotalk_with_coco_8_val_test_as_train.json
+
+SC training on CIDEr predictor model on COCO8-val-val + COCO8-val-test - python train.py --batch_size 50 --learning_rate 5e-6 --checkpoint_path checkpoints/coco_8_val_sc_5e6_on_base_cider_model_ppo --save_checkpoint_every 10 --val_images_use 5000 --max_epochs 3 --start_from checkpoints/ --use_cider --id_language_eval checkpoints_coco_8_val_sc_5e6_on_base_cider_model_ppo --cider_model  --losses_log_every 5 --input_json data/cocotalk_with_coco_8_as_train.json
+
+SC training on COCO8-val-val using GT captions - python train.py --batch_size 50 --learning_rate 5e-6 --checkpoint_path checkpoints/coco_8_val_val_sc_on_coco_on_cc_ref_caps_5e6_ppo/ --save_checkpoint_every 10 --val_images_use 5000 --max_epochs 3 --start_from checkpoints/  --use_ref_caps --id_language_eval coco_8_val_val_sc_on_coco_on_cc_ref_caps_5e6_ppo --input_json data/cocotalk_coco8_split_as_train_val.json --losses_log_every 5
+
+Generate captions on COCO8_val_test - python eval.py --model checkpoints/coco_8_val_val_sc_3e5_on_base_cider_model/model-best.pth --infos_path checkpoints/coco_8_val_val_sc_on_base_ref_caps/infos_-best.pkl --input_json data/cocotalk_coco8_split_as_train_val.json --split val --out_file_path eval_results/coco_8_val_test_on_coco_8_val_val_sc_3e5_on_base_cider_model --batch_size 500 --beam_size 1 --language_eval 0
+
+Cider generation - https://github.com/vrama91/cider
+    "resultFile" - coco_ref.json
+    "idf" : "coco-val-df"
+
+Procedure 
+
+1. Create a captioning model
+    a. Captioning model using COCO72 on cocnceptual captions checkpoint using CELoss - Done
+    b. Captioning model using COCO72 using CELoss - Done
+
+2. Use captioning model and perform SC training
+    a. Using captioning model a - Done (Sashank)
+    b. Using captioning model b - Rachel
+        1 Base model + SC training on COCO72 train using GT captions
+            1. Use SC train on captioning model to train 
+            2. Use the best checkpoint to generate captions on COCO8_val_test
+            3. Use those captions to calculate CIDER scores
+
+        2 SC training using CIDEr predictor model on COCO8-val-val
+        3 SC training on CIDEr predictor model on COCO8-val-test
+        4 SC training on CIDEr predictor model on COCO8-val-val + COCO8-val-test 
+        5 SC training on COCO8-val-val using GT captions

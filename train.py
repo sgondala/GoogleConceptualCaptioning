@@ -40,7 +40,7 @@ def eval_cider_and_append_values(predictions, writer, key, start_iteration, batc
     cider_array = np.array(out['CIDErArary'])
     
     end_number = 0
-    for i in range(math.ceil(len(cider_array) * 1.0 /batch_size)):
+    for i in range(math.ceil(len(cider_array) * 1.0 /batch_size)): # 4
         end_number = i
         start_index = i*batch_size
         end_index = i*batch_size + batch_size
@@ -53,7 +53,7 @@ def train(opt):
     opt.use_fc, opt.use_att = utils.if_use_feat(opt.caption_model)
     
     loader = DataLoader(opt)
-    loader_for_train_data_generation = DataLoader(opt)
+    loader_for_eval_scores = DataLoader(opt)
     opt.vocab_size = loader.vocab_size
     opt.seq_length = loader.seq_length
 
@@ -94,6 +94,7 @@ def train(opt):
     loader.iterators = infos.get('iterators', loader.iterators)
     loader.split_ix = infos.get('split_ix', loader.split_ix)
     best_val_score = -10000000
+    best_train_score = -10000000
     if opt.load_best_score == 1:
         best_val_score = -10000000
 
@@ -274,7 +275,7 @@ def train(opt):
                 print("Epoch Done")
 
             # Write the training loss summary
-            if ((iteration - 1) % opt.losses_log_every == 0):
+            if ((iteration - 1) % opt.losses_log_every == 0 and iteration != 1):
                 add_summary_value(tb_summary_writer, 'train_loss', train_loss, iteration)
                 add_summary_value(tb_summary_writer, 'learning_rate', opt.current_lr, iteration)
                 if sc_flag:
@@ -287,7 +288,6 @@ def train(opt):
                     add_summary_value(tb_summary_writer, 'avg_gen_vifidel', model_out.get('average_gen_vifidel', 0), iteration)
                     
                     greedy_captions_since_last_checkpoint += model_out['greedy_captions']
-
                     gen_captions_since_last_checkpoint += model_out['gen_captions']
 
                     gen_captions_all[iteration] = model_out['gen_captions']
@@ -311,18 +311,18 @@ def train(opt):
                                 'dataset': opt.input_json}
                 eval_kwargs.update(vars(opt))
                 val_loss, predictions, lang_stats = eval_utils.eval_split(
-                    dp_model, lw_model.crit, loader, eval_kwargs)
+                    dp_model, lw_model.crit, loader_for_eval_scores, eval_kwargs)
 
                 # Rechecking on train data too
                 print("Calculating validation score for train data")
                 train_lang_stats = None
 
                 if not opt.do_not_generate_cider_plots:
-                    eval_kwargs_train = {'split': 'train',
+                    eval_kwargs_train = {'split': opt.train_split,
                                     'dataset': opt.input_json}
                     eval_kwargs_train.update(vars(opt))
                     _, _, train_lang_stats = eval_utils.eval_split(
-                        dp_model, lw_model.crit, loader_for_train_data_generation, eval_kwargs_train)
+                        dp_model, lw_model.crit, loader_for_eval_scores, eval_kwargs_train)
                 
                 # if opt.reduce_on_plateau:
                 #     if 'CIDEr' in lang_stats:
@@ -340,12 +340,13 @@ def train(opt):
 
                 val_result_history[iteration] = {'loss': val_loss, 'lang_stats': lang_stats, 'predictions': predictions}
 
-                # if iteration != 1:
-                if True:
+                if iteration != 1: # Easy bookkeeping
                     if not opt.do_not_generate_cider_plots:
                         # Calculate actual cider values of previous iterations
                         # Doing this here to take advantage of batching
-                        start_iteration_number = previous_iteration_losses_logged
+
+                        # start_iteration_number = previous_iteration_losses_logged
+                        start_iteration_number = iteration - opt.save_checkpoint_every
 
                         end_iteration_val = eval_cider_and_append_values(greedy_captions_since_last_checkpoint, tb_summary_writer, 'greedy_generated_captions_actual_cider_scores', start_iteration_number, opt.batch_size, opt.losses_log_every, opt, 'greedy_captions')
                         assert end_iteration_val == iteration, str(end_iteration_val) + ',' + str(iteration)
@@ -369,7 +370,7 @@ def train(opt):
                 if best_val_score is None or current_score > best_val_score:
                     best_val_score = current_score
                     best_flag = True
-
+                        
                 # Dump miscalleous informations
                 infos['best_val_score'] = best_val_score
                 histories['val_result_history'] = val_result_history
@@ -378,13 +379,18 @@ def train(opt):
                 histories['ss_prob_history'] = ss_prob_history
 
                 save_checkpoint(model, infos, optimizer, histories)
-                if opt.save_history_ckpt:
-                    save_checkpoint(model, infos, optimizer, append=str(iteration))
-
+                
                 if best_flag:
                     print("Saving best flag")
+                    if opt.save_all_checkpoints:
+                        save_checkpoint(model, infos, optimizer, append=str(iteration))
                     save_checkpoint(model, infos, optimizer, append='best')
 
+                if train_lang_stats is not None:
+                    if train_lang_stats['CIDEr'] > best_train_score:
+                        best_train_score = train_lang_stats['CIDEr']
+                        save_checkpoint(model, infos, optimizer, append='train_best')
+                
                 # dict_to_save = {}
                 # dict_to_save['gen_captions'] = gen_captions_all
                 # dict_to_save['greedy_captions'] = greedy_captions_all
@@ -425,9 +431,11 @@ def train(opt):
 opt = opts.parse_opt()
 
 assert opt.batch_size % opt.losses_log_every == 0
+assert opt.save_checkpoint_every % opt.losses_log_every == 0
 assert len(opt.id_language_eval) > 0
 
-if opt.ppo and opt.drop_prob_lm > 0:
-    assert False, "Set dropout prob to 0 during PPO training"
+if opt.self_critical_after != -1:
+    if not opt.do_not_use_ppo and opt.drop_prob_lm > 0:
+        assert False, "Set dropout prob to 0 during PPO training"
 
 train(opt)

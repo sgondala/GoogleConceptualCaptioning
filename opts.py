@@ -62,11 +62,11 @@ def parse_opt():
                     help='minibatch size')
     parser.add_argument('--grad_clip', type=float, default=0.1, #5.,
                     help='clip gradients at this value')
-    parser.add_argument('--drop_prob_lm', type=float, default=0.5,
+    parser.add_argument('--drop_prob_lm', type=float, default=0,
                     help='strength of dropout in the Language Model RNN')
-    parser.add_argument('--self_critical_after', type=int, default=-1,
+    parser.add_argument('--self_critical_after', type=int, default=0,
                     help='After what epoch do we start finetuning the CNN? (-1 = disable; never finetune, 0 = finetune from start)')
-    parser.add_argument('--seq_per_img', type=int, default=5,
+    parser.add_argument('--seq_per_img', type=int, default=1,
                     help='number of captions to sample for each image during training. Done for efficiency since CNN forward pass is expensive. E.g. coco has 5 sents/image')
 
     # Sample related
@@ -123,12 +123,11 @@ def parse_opt():
 
 
     # Evaluation/Checkpointing
-    parser.add_argument('--val_images_use', type=int, default=3200,
+    parser.add_argument('--val_images_use', type=int, default=5000,
                     help='how many images to use when periodically evaluating the validation loss? (-1 = all)')
     parser.add_argument('--save_checkpoint_every', type=int, default=2500,
                     help='how often to save a model checkpoint (in iterations)?')
-    parser.add_argument('--save_history_ckpt', type=int, default=1,
-                    help='If save checkpoints at every save point')
+    parser.add_argument('--save_all_checkpoints', action='store_true')
     parser.add_argument('--checkpoint_path', type=str, default='save',
                     help='directory to store checkpointed models')
     parser.add_argument('--language_eval', type=int, default=1,
@@ -172,7 +171,7 @@ def parse_opt():
                     help='')
 
     # CIDEr scores
-    parser.add_argument('--cider_model', type=str, default='../vilbert_beta/checkpoints/coco_minus_8_no_random/pytorch_model_10.bin')
+    parser.add_argument('--cider_model', type=str, default='')
     parser.add_argument('--config_file', type=str, default='config/bert_base_6layer_6conect.json')
     parser.add_argument('--use_cider', action='store_true')
 
@@ -195,12 +194,13 @@ def parse_opt():
     parser.add_argument('--is_classification_cider_model', type=int, default=0)
     parser.add_argument('--classification_threshold', type=float, default=0.999)
     parser.add_argument('--do_not_generate_cider_plots', action='store_true')
+    parser.add_argument('--train_split', type=str, default='train')
    # parser.add_argument('--id_language_eval', type=str, default='')
     
     # PPO
-    parser.add_argument('--ppo', action='store_true')
-    parser.add_argument('--ppo_iters', type=int, default=5)
-    parser.add_argument('--ppo_clip_param', type=float, default=0.2)
+    parser.add_argument('--do_not_use_ppo', action='store_true')
+    parser.add_argument('--ppo_iters', type=int, default=4)
+    parser.add_argument('--ppo_clip_param', type=float, default=0.1)
 
     add_vse_options(parser)
 
@@ -327,5 +327,4 @@ def add_diversity_opts(parser):
                     help='Diverse sampling')
     parser.add_argument('--sample_n_method', type=str, default='sample',
                     help='sample, bs, dbs, gumbel, topk')
-    parser.add_argument('--eval_oracle', type=int, default=1, 
-                    help='if we need to calculate loss.')
+    parser.add_argument('--eval_oracle', type=int, default=1)

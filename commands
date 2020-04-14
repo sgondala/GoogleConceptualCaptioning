@@ -1,85 +1,20 @@
-python train.py --caption_model att2in2 --input_json data/cocotalk_with_cc_vocab_rm_8_same_order.json --input_fc_dir /srv/share2/sgondala/tmp/trainval_36/trainval_resnet101_faster_rcnn_genome_36.tsv --input_att_dir /srv/share2/sgondala/tmp/trainval_36/trainval_resnet101_faster_rcnn_genome_36.tsv --input_label data/cocotalk_with_cc_vocab.h5 --batch_size 50 --learning_rate 3e-5 --learning_rate_decay_start 0 --scheduled_sampling_start 0 --checkpoint_path checkpoints/coco_on_base_rm_8_exp_1_3e5/ --save_checkpoint_every 160 --val_images_use 5000 --max_epochs 3 --rnn_size 2400 | tee model_train_outputs/coco_on_base_rm_8_exp_1_3e5.txt
+Nocaps stuff (Old, not needed now) -
 
 python train.py --caption_model att2in2 --input_json data/nocapstalk_with_cc_vocab.json --input_fc_dir /srv/share2/sgondala/tmp/trainval_36/nocaps_val_vg_detector_features_adaptive.h5 --input_att_dir /srv/share2/sgondala/tmp/trainval_36/nocaps_val_vg_detector_features_adaptive.h5 --input_label data/nocapstalk_with_cc_vocab.h5 --batch_size 10 --learning_rate 3e-5 --learning_rate_decay_start 0 --scheduled_sampling_start 0 --checkpoint_path checkpoints/nocaps_train_no_checkpoint_jan_24_3e5 --save_checkpoint_every 6000 --val_images_use 150 --max_epochs 10 --rnn_size 2400
 
-
-Eval on coco - 
-
-
-python eval.py --model checkpoints/coco_on_cc_rm_8_exp_2_15e5/model-12000.pth --infos_path checkpoints/coco_on_cc_rm_8_exp_2_15e5/infos_-12000.pkl  --input_fc_dir /srv/share2/sgondala/tmp/trainval_36/trainval_resnet101_faster_rcnn_genome_36.tsv --input_att_dir /srv/share2/sgondala/tmp/trainval_36/trainval_resnet101_faster_rcnn_genome_36.tsv --num_images -1 --input_json data/cocotalk_with_cc_vocab_rm_8_same_order.json --split train --out_file eval_results/coco_on_cc_rm_8_15e5_12k --batch_size 1000
-
-checkpoints/coco_sc_on_exp2_1e5_vilbert_10/model-400.pth
-
-Nocaps finetune - 
-
 python train.py --caption_model att2in2 --input_json data/nocapstalk_with_cc_vocab.json --input_fc_dir /srv/share2/sgondala/tmp/trainval_36/nocaps_val_vg_detector_features_adaptive.h5 --input_att_dir /srv/share2/sgondala/tmp/trainval_36/nocaps_val_vg_detector_features_adaptive.h5 --input_label data/nocapstalk_with_cc_vocab.h5 --batch_size 50 --learning_rate 3e-5 --learning_rate_decay_start 0 --scheduled_sampling_start 0 --checkpoint_path checkpoints/nocaps_finetune_coco_base_3e5/ --save_checkpoint_every 20 --val_images_use 200 --max_epochs 30 --start_from checkpoints/coco_base_jan_25_3e5/ --rnn_size 2400
-
-python train.py --caption_model att2in2 --input_json data/cocotalk_with_cc_vocab.json --input_fc_dir /srv/share2/sgondala/tmp/trainval_36/trainval_resnet101_faster_rcnn_genome_36.tsv --input_att_dir /srv/share2/sgondala/tmp/trainval_36/trainval_resnet101_faster_rcnn_genome_36.tsv --input_label data/cocotalk_with_cc_vocab.h5 --batch_size 10 --learning_rate 3e-5 --learning_rate_decay_start 0 --scheduled_sampling_start 0 --checkpoint_path conceptual_captions_plus_coco_finetune_dec13_3e5_3 --save_checkpoint_every 6000 --val_images_use 5000 --max_epochs 3 --start_from conceptual_base_on_att2in/ --rnn_size 2400
-
-
-Train self critical coco 
-
-python train.py --caption_model att2in2 --input_json data/cocotalk_with_cc_vocab_rm_8_same_order_for_self_critical.json --input_fc_dir /srv/share2/sgondala/tmp/trainval_36/python3_stuff/trainval_resnet101_faster_rcnn_genome_36.tsv --input_att_dir /srv/share2/sgondala/tmp/trainval_36/python3_stuff/trainval_resnet101_faster_rcnn_genome_36.tsv --input_label data/cocotalk_with_cc_vocab.h5 --batch_size 50 --learning_rate 5e-5 --learning_rate_decay_start 0 --scheduled_sampling_start 0 --checkpoint_path checkpoints/coco_sc_on_exp2_5e5_vilbert_10 --save_checkpoint_every 100 --val_images_use 5000 --max_epochs 5 --rnn_size 2400 --self_critical_after 0 --config_file config/bert_base_6layer_6conect.json --cider_model ../vilbert_beta/checkpoints/coco_minus_8_no_random/pytorch_model_10.bin --seq_per_img 1 --start_from checkpoints/coco_on_cc_rm_8_exp_2_15e5/
-
-Train on nocaps self critical 
 
 python train.py --caption_model att2in2 --input_json data/nocapstalk_with_cc_vocab.json --input_fc_dir /srv/share2/sgondala/tmp/trainval_36/python3_stuff/nocaps_val_vg_detector_features_adaptive.h5 --input_att_dir /srv/share2/sgondala/tmp/trainval_36/python3_stuff/nocaps_val_vg_detector_features_adaptive.h5 --input_label data/nocapstalk_with_cc_vocab.h5 --batch_size 10 --learning_rate 3e-5 --learning_rate_decay_start 0 --scheduled_sampling_start 0 --checkpoint_path checkpoints/temp --save_checkpoint_every 20 --val_images_use 200 --max_epochs 30 --rnn_size 2400 --self_critical_after 0 --config_file config/bert_base_6layer_6conect.json --cider_model ../vilbert_beta/checkpoints/clean_coco_and_nocaps_multi_train_ratio_3/pytorch_model_19.bin --seq_per_img 1 --start_from checkpoints/conceptual_base_on_att2in/
 
-All nocaps images sc train 
-
 python train.py --caption_model att2in2 --input_json data/nocapstalk_with_cc_vocab_only_one_val.json --input_fc_dir /srv/share2/sgondala/tmp/trainval_36/python3_stuff/nocaps_val_vg_detector_features_adaptive.h5 --input_att_dir /srv/share2/sgondala/tmp/trainval_36/python3_stuff/nocaps_val_vg_detector_features_adaptive.h5 --input_label data/nocapstalk_with_cc_vocab_fake_for_sc.h5 --batch_size 10 --learning_rate 3e-5 --learning_rate_decay_start 0 --scheduled_sampling_start 0 --checkpoint_path checkpoints/nocaps_sc_after_0_on_cc_all_images/ --save_checkpoint_every 20 --val_images_use 200 --max_epochs 10 --rnn_size 2400 --self_critical_after 0 --config_file config/bert_base_6layer_6conect.json --cider_model ../vilbert_beta/checkpoints/clean_coco_and_nocaps_multi_train_ratio_3/pytorch_model_19.bin --seq_per_img 1 --start_from checkpoints/conceptual_base_on_att2in/
 
-
-Train on nocaps self critical with ref caps
-
 python train.py --caption_model att2in2 --input_json data/nocapstalk_with_cc_vocab.json --input_fc_dir /srv/share2/sgondala/tmp/trainval_36/python3_stuff/nocaps_val_vg_detector_features_adaptive.h5 --input_att_dir /srv/share2/sgondala/tmp/trainval_36/python3_stuff/nocaps_val_vg_detector_features_adaptive.h5 --input_label data/nocapstalk_with_cc_vocab.h5 --batch_size 10 --learning_rate 3e-5 --learning_rate_decay_start 0 --scheduled_sampling_start 0 --checkpoint_path checkpoints/temp --save_checkpoint_every 20 --val_images_use 200 --max_epochs 30 --rnn_size 2400 --self_critical_after 0 --cached_tokens coco-train-idxs --use_model_for_sc_train 0 --seq_per_img 1
+
 
 Train on coco self critical with ref caps
 
 python train.py --caption_model att2in2 --input_json data/cocotalk_with_cc_vocab.json --input_fc_dir /srv/share2/sgondala/tmp/trainval_36/python3_stuff/trainval_resnet101_faster_rcnn_genome_36.tsv --input_att_dir /srv/share2/sgondala/tmp/trainval_36/python3_stuff/trainval_resnet101_faster_rcnn_genome_36.tsv --input_label data/cocotalk_with_cc_vocab.h5 --batch_size 10 --learning_rate 3e-5 --learning_rate_decay_start 0 --scheduled_sampling_start 0 --checkpoint_path checkpoints/coco_train_on_cc_using_self_critical_after_0_ref_caps/ --save_checkpoint_every 6000 --val_images_use 5000 --max_epochs 5 --rnn_size 2400 --self_critical_after 0  --seq_per_img 1 --start_from checkpoints/conceptual_base_on_att2in/ --cached_tokens coco-train-idxs --use_model_for_sc_train 0
 
-
-
-python eval.py --model log_fc_iter1_coco_finetune/model-732000.pth --infos_path log_fc_iter1_coco_finetune/infos_td-best-732000.pkl --image_folder /srv/datasets/coco/images/val2014/ --num_images 5 
-
-
-python eval.py --model log_fc_iter1_coco_finetune/model-732000.pth --infos_path log_fc_iter1_coco_finetune/infos_td-best-732000.pkl --image_folder /srv/datasets/coco/images/val2014/ --num_images 5 --input_fc_dir /srv/share2/sgondala/tmp/trainval_36/trainval_resnet101_faster_rcnn_genome_36.tsv --input_att_dir /srv/share2/sgondala/tmp/trainval_36/trainval_resnet101_faster_rcnn_genome_36.tsv --input_box_dir /srv/share2/sgondala/tmp/trainval_36/trainval_resnet101_faster_rcnn_genome_36.tsv
-
-python eval.py --model checkpoints_coco_train_raw_topdown/model.pth --infos_path checkpoints_coco_train_raw_topdown/infos_.pkl --input_fc_dir /srv/share2/sgondala/tmp/trainval_36/nocaps_val_vg_detector_features_adaptive.h5 --input_att_dir /srv/share2/sgondala/tmp/trainval_36/nocaps_val_vg_detector_features_adaptive.h5 --input_box_dir /srv/share2/sgondala/tmp/trainval_36/nocaps_val_vg_detector_features_adaptive.h5 --num_images 5 --input_json data/nocapstalk.json --split train
-
-
-python eval.py --model checkpoints_coco_train_raw_topdown/model.pth --infos_path checkpoints_coco_train_raw_topdown/infos_.pkl --input_fc_dir /srv/share2/sgondala/tmp/trainval_36/nocaps_val_vg_detector_features_adaptive.h5 --input_att_dir /srv/share2/sgondala/tmp/trainval_36/nocaps_val_vg_detector_features_adaptive.h5 --num_images 5 --input_json data/nocapstalk.json --split train
-
-python eval.py --model checkpoints/nocaps_finetune_coco_base_3e4/model.pth --infos_path checkpoints/nocaps_finetune_coco_base_3e4/infos_.pkl --input_fc_dir /srv/share2/sgondala/tmp/trainval_36/nocaps_val_vg_detector_features_adaptive.h5 --input_att_dir /srv/share2/sgondala/tmp/trainval_36/nocaps_val_vg_detector_features_adaptive.h5 --input_box_dir /srv/share2/sgondala/tmp/trainval_36/nocaps_val_vg_detector_features_adaptive.h5 --num_images 5 --input_json data/nocapstalk_with_cc_vocab_old.json --split train --out_file_path eval_results/cocobase_plus_nocaps_finetune
-
-Shapes:
-
-Conceptual base - [(16304, 512), (2400, 2048), (2400,), (16304, 2400), (16304,), (512, 2400), (512,), (4800, 2400), (4800,), (12000, 512), (12000,), (12000, 2400), (12000,), (512, 2400), (512,), (1, 512), (1,)]
-Coco finetune   - [(16304, 512), (2400, 2048), (2400,), (16304, 2400), (16304,), (512, 2400), (512,), (4800, 2400), (4800,), (12000, 512), (12000,), (12000, 2400), (12000,), (512, 2400), (512,), (1, 512), (1,)]
-
-
-(WRONG!! ) Coco base -       [(16304, 512), (512, 2048), (512,), (16304, 512), (16304,), (512, 512), (512,), (1024, 512), (1024,), (2560, 512), (2560,), (2560, 512), (2560,), (512, 512), (512,), (1, 512), (1,)]
-
-
-Models needed 
-
-1. Conceptual base (Done) - conceptual_base_on_att2in - (33, 33, 33, 33)
-2. Conceptual base + coco fine tune (Done) - conceptual_captions_plus_coco_finetune_dec13_3e5_5 - (77,62,41,60)
-3. Conceptual base + coco fine tune + nocaps fine tune - 
-4. Coco base - coco_base_jan_25_3e5 - (74, 57, 29, 53)
-5. Coco base + nocaps fine tune - nocaps_finetune_coco_base_3e4 - Before removing duplicates - (106, 81, 72, 83), After - (79, 67, 44, 64)
-
-// Not called for
-6. Nocaps base - 
-
-TODO: 
-
-1. Make nocaps files for some file - ref and out
-Ref - nocaps_ref_file_ascii.json
-Out - nocaps_conceptual_base_with_coco_finetune_1000_images_only_ascii.json
-2. Get cider scores for nocaps
-Cider - nocaps_cider_scores.json
-3. Test on nocaps
 
 
 Train self critical coco - cider and slor
@@ -110,9 +45,11 @@ SLOR - python train.py --batch_size 100 --learning_rate 5e-5 --checkpoint_path c
 
 VIFIDEL and SLOR - python train.py --batch_size 100 --learning_rate 5e-5 --checkpoint_path checkpoints/coco_sc_on_exp1_vifidel_and_slor_5e5/ --save_checkpoint_every 50 --val_images_use 5000 --max_epochs 10 --self_critical_after 0  --seq_per_img 1 --start_from checkpoints/coco_on_cc_rm_8_exp_1_3e5 --use_slor --use_vifidel --id_language_eval vifidel_and_slor
 
-CIDER Ref caps - python train.py --batch_size 100 --learning_rate 5e-5 --checkpoint_path checkpoints/coco_sc_on_exp1_cider_5e5_ref_caps/ --save_checkpoint_every 400 --val_images_use 5000 --max_epochs 10 --self_critical_after 0 --seq_per_img 1 --start_from checkpoints/coco_on_cc_rm_8_exp_1_3e5/  --use_ref_caps --id_language_eval cider_ref_caps
+CIDER Ref caps - python train.py --batch_size 50 --learning_rate 5e-5 --checkpoint_path checkpoints/coco_8_val_val_sc_on_base_ref_caps/ --save_checkpoint_every 20 --val_images_use 5000 --max_epochs 5 --self_critical_after 0 --seq_per_img 1 --start_from checkpoints/coco_on_cc_rm_8_exp_1_3e5/  --use_ref_caps --id_language_eval checkpoints_coco_8_val_val_sc_on_base_ref_caps --input_json data/cocotalk_coco8_split_as_train_val.json --losses_log_every 10
 
 CIDER on COCO72 - python train.py --batch_size 100 --learning_rate 5e-5 --checkpoint_path checkpoints/coco_sc_on_exp1_cider_5e5_train_data_for_captions/ --save_checkpoint_every 500 --val_images_use 500 --max_epochs 4 --self_critical_after 0  --seq_per_img 1 --start_from checkpoints/coco_on_cc_rm_8_exp_1_3e5/ --use_cider --input_json data/cocotalk_with_cc_vocab_rm_8_same_order.json --id_language_eval cider_temp --language_eval 0 --losses_log_every 1
+
+CIDER on COCO80_val_test - python train.py --batch_size 50 --learning_rate 3e-5 --checkpoint_path checkpoints/coco_80_val_test_sc_on_exp1_cider_3e5/ --save_checkpoint_every 20 --val_images_use 5000 --max_epochs 3 --self_critical_after 0  --seq_per_img 1 --start_from checkpoints/coco_on_cc_rm_8_exp_1_3e5/ --use_cider --input_json data/cocotalk_with_cc_vocab_rm_8_same_order_for_self_critical.json --id_language_eval checkpoints_coco_80_val_test_sc_on_exp1_cider_3e5 --language_eval 0 --losses_log_every 10 --cider_model ../hard_negative_all_outputs_Apr_10/pytorch_model_2.bin
 
 CIDER classification model - python train.py --batch_size 100 --learning_rate 5e-5 --checkpoint_path checkpoints/coco_sc_on_exp1_coco_rm_8_thres_1_0_model_5_cider_5e5_classification_threshold_999995/ --save_checkpoint_every 50 --val_images_use 5000 --max_epochs 10 --self_critical_after 0  --seq_per_img 1 --start_from checkpoints/coco_on_cc_rm_8_exp_1_3e5/ --use_cider --is_classification_cider_model 1 --classification_threshold 0.999995 --cider_model ../vilbert_beta/checkpoints/coco_minus_8_classification_model_thres_1/pytorch_model_5.bin --id_language_eval 
 
@@ -129,7 +66,9 @@ CIDER and vifidel and slor on regression full data - python train.py --batch_siz
 
 CIDER refcaps ppo - python train.py --batch_size 100 --learning_rate 3e-5 --checkpoint_path checkpoints/coco_sc_on_exp1_cider_3e5_ref_caps_ppo/ --save_checkpoint_every 100 --val_images_use 5000 --max_epochs 10 --self_critical_after 0 --seq_per_img 1 --start_from checkpoints/coco_on_cc_rm_8_exp_1_3e5/  --use_ref_caps --id_language_eval checkpoints_coco_sc_on_exp1_cider_3e5_ref_caps_ppo --drop_prob_lm 0 --ppo 
 
-CIDER cider model PPO - python train.py --batch_size 50 --learning_rate 3e-5 --checkpoint_path checkpoints/coco_sc_on_exp1_cider_3e5_apr_3_model_2_ppo/ --save_checkpoint_every 100 --val_images_use 5000 --max_epochs 3 --self_critical_after 0  --seq_per_img 1 --start_from checkpoints/coco_on_cc_rm_8_exp_1_3e5/ --use_cider --id_language_eval checkpoints_coco_sc_on_exp1_cider_3e5_apr_3_model_2_ppo --cider_model ../hard_negative_all_outputs_Apr_3/pytorch_model_2.bin --ppo --drop_prob_lm 0 --do_not_generate_cider_plots
+CIDER cider model PPO - python train.py --batch_size 50 --learning_rate 3e-5 --checkpoint_path checkpoints/coco_sc_on_exp1_cider_3e5_apr_3_model_2_ppo/ --save_checkpoint_every 100 --val_images_use 5000 --max_epochs 3 --self_critical_after 0  --seq_per_img 1 --start_from checkpoints/coco_on_cc_rm_8_exp_1_3e5/ --use_cider --id_language_eval checkpoints_coco_sc_on_exp1_cider_3e5_apr_3_model_2_ppo --cider_model ../hard_negative_all_outputs_Apr_3/pytorch_model_2.bin --ppo --drop_prob_lm 0 
+
+CIDER model PPO and different input json - python train.py --batch_size 100 --learning_rate 5e-6 --checkpoint_path checkpoints/coco_80_val_test_sc_on_exp1_cider_5e6_ppo --save_checkpoint_every 10 --val_images_use 5000 --max_epochs 3 --self_critical_after 0  --seq_per_img 1 --start_from checkpoints/coco_on_cc_rm_8_exp_1_3e5/ --use_cider --id_language_eval checkpoints_coco_80_val_test_sc_on_exp1_cider_5e6_ppo --cider_model ../hard_negative_all_outputs/pytorch_model_2.bin --ppo --drop_prob_lm 0 --ppo_iters 4 --ppo_clip_param 0.1 --losses_log_every 5 --input_json data/cocotalk_with_coco_80_val_test_as_train
 
 CIDER cider model reinforce - python train.py --batch_size 50 --learning_rate 3e-5 --checkpoint_path checkpoints/coco_sc_on_exp1_cider_3e5_apr_3_model_2_reinforce/ --save_checkpoint_every 100 --val_images_use 5000 --max_epochs 3 --self_critical_after 0  --seq_per_img 1 --start_from checkpoints/coco_on_cc_rm_8_exp_1_3e5/ --use_cider --id_language_eval checkpoints_coco_sc_on_exp1_cider_3e5_apr_3_model_2_reinforce --cider_model ../hard_negative_all_outputs_Apr_3/pytorch_model_2.bin
 
@@ -139,12 +78,15 @@ python train.py --batch_size 100 --learning_rate 5e-5 --checkpoint_path checkpoi
 
 Commands with default parameters (COCO val 8 eval)
 
-Eval on COCO80 val val - python eval.py --model checkpoints/ --infos_path checkpoints/ --num_images 2000 --input_json data/cocotalk_with_cc_vocab_rm_8_same_order_for_self_critical.json --split train --out_file_path eval_results/ --batch_size 1000 --beam_size 1 --language_eval 0
+Eval on COCO80 val val - python eval.py --model checkpoints/ --infos_path checkpoints/ --num_images -1 --input_json data/cocotalk_with_cc_vocab_rm_8_same_order_for_self_critical.json --split train --out_file_path eval_results/ --batch_size 500 --beam_size 1 --language_eval 0
 
-Eval on COCO80 val test - python eval.py --model checkpoints/ --infos_path checkpoints/ --num_images 2000 --input_json data/cocotalk_with_cc_vocab_rm_8_same_order_for_self_critical.json --split val --out_file_path eval_results/ --batch_size 1000 --beam_size 1 --language_eval 0
+Eval on COCO80 val test - python eval.py --model checkpoints/ --infos_path checkpoints/ --num_images -1 --input_json data/cocotalk_with_cc_vocab_rm_8_same_order_for_self_critical.json --split val --out_file_path eval_results/ --batch_size 500 --beam_size 1 --language_eval 0
 
-Eval on COCO72 train - python eval.py --model checkpoints/ --infos_path checkpoints/ --num_images 2000 --input_json data/cocotalk_with_cc_vocab_rm_8_same_order.json --split train --out_file_path eval_results/ --batch_size 1000 --beam_size 1 --language_eval 0
+Eval on COCO72 train - python eval.py --model checkpoints/ --infos_path checkpoints/ --num_images -1 --input_json data/cocotalk_with_cc_vocab_rm_8_same_order.json --split train --out_file_path eval_results/ --batch_size 500 --beam_size 1 --language_eval 0
 
+Eval on COCO8 train - python eval.py --model checkpoints/ --infos_path checkpoints/ --num_images -1 --input_json data/cocotalk_with_coco_8_as_train.json --split train --out_file_path eval_results/ --batch_size 500 --beam_size 1 --language_eval 0
+
+Eval on COCO8 val test - python eval.py --model checkpoints/coco_8_val_val_sc_3e5_on_base_cider_model/model-best.pth --infos_path checkpoints/coco_8_val_val_sc_on_base_ref_caps/infos_-best.pkl --num_images -1 --input_json data/cocotalk_coco8_split_as_train_val.json --split val --out_file_path eval_results/coco_8_val_test_on_coco_8_val_val_sc_3e5_on_base_cider_model --batch_size 500 --beam_size 1 --language_eval 0
 
 Other commands - Not this repo
 
@@ -163,3 +105,7 @@ python train.py --batch_size 50 --learning_rate 5e-5 --checkpoint_path checkpoin
 python train.py --batch_size 50 --learning_rate 5e-5 --checkpoint_path checkpoints/Apr_1_hard_negative_models/cider_5e5_on_Apr_1_model_1 --save_checkpoint_every 100 --val_images_use 5000 --max_epochs 3 --self_critical_after 0  --seq_per_img 1 --start_from checkpoints/coco_on_cc_rm_8_exp_1_3e5/ --use_cider --id_language_eval checkpoints_Apr_1_hard_negative_models_cider_5e5_on_Apr_1_model_1 --cider_model ../hard_negative_all_outputs/pytorch_model_1.bin
 
 python train.py --batch_size 50 --learning_rate 5e-5 --checkpoint_path checkpoints/Apr_1_hard_negative_models/cider_5e5_on_Apr_1_model_1 --save_checkpoint_every 100 --val_images_use 5000 --max_epochs 3 --self_critical_after 0  --seq_per_img 1 --start_from checkpoints/coco_on_cc_rm_8_exp_1_3e5/ --use_cider --id_language_eval checkpoints_Apr_1_hard_negative_models_cider_5e5_on_Apr_1_model_1 --cider_model ../hard_negative_all_outputs/pytorch_model_1.bin
+
+
+
+python train.py --batch_size 50 --learning_rate 5e-5 --checkpoint_path checkpoints/coco_80_val_complete_sc_on_exp1_cider_5e5/ --save_checkpoint_every 50 --val_images_use 5000 --max_epochs 3 --self_critical_after 0  --seq_per_img 1 --start_from checkpoints/coco_on_cc_rm_8_exp_1_3e5/ --use_cider --input_json data/cocotalk_coco_80_val_as_train.json --id_language_eval checkpoints_coco_80_val_complete_sc_on_exp1_cider_5e5 --losses_log_every 10 --cider_model ../hard_negative_all_outputs_Apr_10/pytorch_model_2.bin

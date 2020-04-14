@@ -15,7 +15,7 @@ class LossWrapper(torch.nn.Module):
         self.model = model
         self.model_greedy = model_greedy
         self.crit = utils.LanguageModelCriterion()
-        self.rl_crit = utils.RewardCriterion() if not opt.ppo else utils.PPOCriterion(opt.ppo_clip_param)
+        self.rl_crit = utils.RewardCriterion() if opt.do_not_use_ppo else utils.PPOCriterion(opt.ppo_clip_param)
         self.retrieval_reward_weight = 0
         self.ix_to_word = ix_to_word
         self.cider_dataset = cider_dataset
@@ -56,7 +56,7 @@ class LossWrapper(torch.nn.Module):
 
         reduction = 'none' if drop_worst_flag else 'mean'
 
-        if self.opt.ppo and sc_flag: # PPO self-critical update
+        if not self.opt.do_not_use_ppo and sc_flag: # PPO self-critical update
             # PPO code taken from https://github.com/clu8/self-critical-ppo
 
             self.model.eval()

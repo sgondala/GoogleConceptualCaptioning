@@ -44,7 +44,7 @@ def language_eval(dataset, preds, preds_n, eval_kwargs, cache_file_key):
     cache_path = os.path.join('eval_results/', '.cache_'+ model_id + '_' + cache_file_key + '.json')
 
     coco = COCO(annFile)
-    valids = coco.getImgIds()
+    valids = coco.getImgIds() # 123287 - All coco data
 
     preds_filt = [p for p in preds if p['image_id'] in valids]
     print("Annotations file name " + cache_path)
@@ -68,7 +68,9 @@ def language_eval(dataset, preds, preds_n, eval_kwargs, cache_file_key):
         final_dict_to_dump['filtered_preds'] = preds_filt.tolist() if isinstance(preds_filt, np.ndarray) else preds_filt
         final_dict_to_dump['CIDErArary'] = out['CIDErArary'].tolist() if isinstance(out['CIDErArary'], np.ndarray) else out['CIDErArary']
         final_dict_to_dump['valids'] = valids.tolist() if isinstance(valids, np.ndarray) else valids
-        json.dump(final_dict_to_dump, open('eval_results/.cache_'+ model_id + '_' + cache_file_key + '_final_dump.json', 'w'))
+        filename_dump = 'eval_results/.cache_'+ model_id + '_' + cache_file_key + '_final_dump.json'
+        json.dump(final_dict_to_dump, open(filename_dump, 'w'))
+        print("Dumped to file ", filename_dump)
         assert False
 
     return out
