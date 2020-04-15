@@ -77,3 +77,12 @@ Procedure
         3 SC training on CIDEr predictor model on COCO8-val-test
         4 SC training on CIDEr predictor model on COCO8-val-val + COCO8-val-test 
         5 SC training on COCO8-val-val using GT captions
+
+COCO80 commands
+
+SC training on COCO80-val-val using GT captions - python train.py --batch_size 50 --learning_rate 5e-6 --checkpoint_path checkpoints/coco_80_val_val_sc_on_exp1_cider_5e6_ref_caps_ppo/ --save_checkpoint_every 50 --val_images_use 5000 --max_epochs 4 --start_from checkpoints/coco_on_cc_rm_8_exp_1_3e5/  --use_ref_caps --id_language_eval coco_80_val_val_sc_on_exp1_cider_5e6_ref_caps_ppo --input_json data/cocotalk_with_cc_vocab_rm_8_same_order_for_self_critical.json --losses_log_every 25
+
+
+SC training on CIDEr predictor model on COCO80-val-test - python train.py --batch_size 50 --learning_rate 5e-6 --checkpoint_path checkpoints/coco_80_val_test_sc_on_exp1_cider_5e6_ppo --save_checkpoint_every 50 --val_images_use 5000 --max_epochs 4 --start_from checkpoints/coco_on_cc_rm_8_exp_1_3e5/  --id_language_eval checkpoints_coco_80_val_test_sc_on_exp1_cider_5e6_ppo --use_cider --cider_model ../hard_negative_all_outputs_Apr_10/pytorch_model_2.bin  --losses_log_every 25 --input_json data/cocotalk_with_coco_80_val_test_as_train.json
+
+SC training on CIDEr predictor model on COCO80-val-val + COCO80-val-test - python train.py --batch_size 50 --learning_rate 5e-6 --checkpoint_path checkpoints/coco_80_val_complete_sc_on_exp1_cider_5e6_ppo/ --save_checkpoint_every 50 --val_images_use 5000 --max_epochs 4 --start_from checkpoints/coco_on_cc_rm_8_exp_1_3e5/  --id_language_eval checkpoints_coco_80_val_complete_sc_on_exp1_cider_5e6_ppo --use_cider --cider_model ../hard_negative_all_outputs_Apr_10/pytorch_model_2.bin  --losses_log_every 25 --input_json data/cocotalk_coco_80_val_as_train.json

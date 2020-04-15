@@ -38,9 +38,15 @@ def add_summary_value(writer, key, value, iteration):
 def eval_cider_and_append_values(predictions, writer, key, start_iteration, batch_size, losses_log_every, opt, cache_file_key):
     out = language_eval(None, predictions, None, {'id_language_eval': opt.id_language_eval}, cache_file_key)
     cider_array = np.array(out['CIDErArary'])
+
+    if len(cider_array) != len(predictions):
+        # There are some repeat values, plotting gives wrong results
+        print("Not plotting cider for this bunch of items")
+        end_number = math.ceil(len(predictions) * 1.0 /batch_size)
+        return start_iteration + (end_number + 1) * losses_log_every
     
     end_number = 0
-    for i in range(math.ceil(len(cider_array) * 1.0 /batch_size)): # 4
+    for i in range(math.ceil(len(cider_array) * 1.0 /batch_size)):
         end_number = i
         start_index = i*batch_size
         end_index = i*batch_size + batch_size

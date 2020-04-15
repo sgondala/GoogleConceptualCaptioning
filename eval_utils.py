@@ -62,16 +62,16 @@ def language_eval(dataset, preds, preds_n, eval_kwargs, cache_file_key):
         out[metric] = score
     
     out['CIDErArary'] = cocoEval.evalArray['CIDEr']
-    if len(out['CIDErArary']) != len(preds):
-        final_dict_to_dump = {}
-        final_dict_to_dump['actual_preds'] = preds.tolist() if isinstance(preds, np.ndarray) else preds
-        final_dict_to_dump['filtered_preds'] = preds_filt.tolist() if isinstance(preds_filt, np.ndarray) else preds_filt
-        final_dict_to_dump['CIDErArary'] = out['CIDErArary'].tolist() if isinstance(out['CIDErArary'], np.ndarray) else out['CIDErArary']
-        final_dict_to_dump['valids'] = valids.tolist() if isinstance(valids, np.ndarray) else valids
-        filename_dump = 'eval_results/.cache_'+ model_id + '_' + cache_file_key + '_final_dump.json'
-        json.dump(final_dict_to_dump, open(filename_dump, 'w'))
-        print("Dumped to file ", filename_dump)
-        assert False
+    # if len(out['CIDErArary']) != len(preds):
+    #     final_dict_to_dump = {}
+    #     final_dict_to_dump['actual_preds'] = preds.tolist() if isinstance(preds, np.ndarray) else preds
+    #     final_dict_to_dump['filtered_preds'] = preds_filt.tolist() if isinstance(preds_filt, np.ndarray) else preds_filt
+    #     final_dict_to_dump['CIDErArary'] = out['CIDErArary'].tolist() if isinstance(out['CIDErArary'], np.ndarray) else out['CIDErArary']
+    #     final_dict_to_dump['valids'] = valids.tolist() if isinstance(valids, np.ndarray) else valids
+    #     filename_dump = 'eval_results/.cache_'+ model_id + '_' + cache_file_key + '_final_dump.json'
+    #     json.dump(final_dict_to_dump, open(filename_dump, 'w'))
+    #     print("Dumped to file ", filename_dump)
+    #     assert False
 
     return out
 
