@@ -1,0 +1,26 @@
+#!/bin/bash
+
+# python train.py --batch_size 50 --learning_rate 3e-5 --checkpoint_path checkpoints/ppo_experiments/ppo_3e5_50_4_0_2/ --save_checkpoint_every 200 --val_images_use 5000 --max_epochs 3 --self_critical_after 0  --seq_per_img 1 --start_from checkpoints/coco_on_cc_rm_8_exp_1_3e5/ --use_cider --id_language_eval checkpoints_ppo_experiments_ppo_3e5_50_4_0_2 --cider_model ../hard_negative_all_outputs_Apr_3/pytorch_model_2.bin --ppo --drop_prob_lm 0 --ppo_iters 4 --ppo_clip_param 0.2
+
+# python train.py --batch_size 100 --learning_rate 3e-5 --checkpoint_path checkpoints/ppo_experiments/ppo_3e5_100_4_0_2/ --save_checkpoint_every 10 --val_images_use 5000 --max_epochs 1 --self_critical_after 0  --seq_per_img 1 --start_from checkpoints/coco_on_cc_rm_8_exp_1_3e5/ --use_cider --id_language_eval checkpoints_ppo_experiments_ppo_3e5_100_4_0_2 --cider_model ../hard_negative_all_outputs_Apr_3/pytorch_model_2.bin --ppo --drop_prob_lm 0 --ppo_iters 4 --ppo_clip_param 0.2
+
+# python train.py --batch_size 50 --learning_rate 3e-5 --checkpoint_path checkpoints/ppo_experiments/ppo_3e5_50_8_0_2/ --save_checkpoint_every 20 --val_images_use 5000 --max_epochs 1 --self_critical_after 0  --seq_per_img 1 --start_from checkpoints/coco_on_cc_rm_8_exp_1_3e5/ --use_cider --id_language_eval checkpoints_ppo_experiments_ppo_3e5_50_8_0_2 --cider_model ../hard_negative_all_outputs_Apr_3/pytorch_model_2.bin --ppo --drop_prob_lm 0 --ppo_iters 8 --ppo_clip_param 0.2
+
+# python train.py --batch_size 50 --learning_rate 3e-5 --checkpoint_path checkpoints/ppo_experiments/ppo_3e5_50_10_0_2/ --save_checkpoint_every 20 --val_images_use 5000 --max_epochs 1 --self_critical_after 0  --seq_per_img 1 --start_from checkpoints/coco_on_cc_rm_8_exp_1_3e5/ --use_cider --id_language_eval checkpoints_ppo_experiments_ppo_3e5_50_10_0_2 --cider_model ../hard_negative_all_outputs_Apr_3/pytorch_model_2.bin --ppo --drop_prob_lm 0 --ppo_iters 10 --ppo_clip_param 0.2
+
+# python train.py --batch_size 50 --learning_rate 3e-5 --checkpoint_path checkpoints/ppo_experiments/ppo_3e5_50_4_0_3/ --save_checkpoint_every 20 --val_images_use 5000 --max_epochs 1 --self_critical_after 0  --seq_per_img 1 --start_from checkpoints/coco_on_cc_rm_8_exp_1_3e5/ --use_cider --id_language_eval checkpoints_ppo_experiments_ppo_3e5_50_4_0_3 --cider_model ../hard_negative_all_outputs_Apr_3/pytorch_model_2.bin --ppo --drop_prob_lm 0 --ppo_iters 4 --ppo_clip_param 0.3
+
+# python train.py --batch_size 50 --learning_rate 3e-5 --checkpoint_path checkpoints/ppo_experiments/ppo_3e5_50_4_0_1/ --save_checkpoint_every 20 --val_images_use 5000 --max_epochs 1 --self_critical_after 0  --seq_per_img 1 --start_from checkpoints/coco_on_cc_rm_8_exp_1_3e5/ --use_cider --id_language_eval checkpoints_ppo_experiments_ppo_3e5_50_4_0_1 --cider_model ../hard_negative_all_outputs_Apr_3/pytorch_model_2.bin --ppo --drop_prob_lm 0 --ppo_iters 4 --ppo_clip_param 0.1
+
+# python train.py --batch_size 50 --learning_rate 3e-5 --checkpoint_path checkpoints/ppo_experiments/ppo_3e5_50_8_0_1/ --save_checkpoint_every 20 --val_images_use 5000 --max_epochs 1 --self_critical_after 0  --seq_per_img 1 --start_from checkpoints/coco_on_cc_rm_8_exp_1_3e5/ --use_cider --id_language_eval checkpoints_ppo_experiments_ppo_3e5_50_8_0_1 --cider_model ../hard_negative_all_outputs_Apr_3/pytorch_model_2.bin --ppo --drop_prob_lm 0 --ppo_iters 8 --ppo_clip_param 0.1
+
+python train.py --batch_size 50 --learning_rate 3e-5 --checkpoint_path checkpoints/ppo_experiments/ppo_3e5_50_8_0_2/ --save_checkpoint_every 20 --val_images_use 5000 --max_epochs 1 --self_critical_after 0  --seq_per_img 1 --start_from checkpoints/coco_on_cc_rm_8_exp_1_3e5/ --use_cider --id_language_eval checkpoints_ppo_experiments_ppo_3e5_50_8_0_2 --cider_model ../hard_negative_all_outputs_Apr_3/pytorch_model_2.bin --ppo --drop_prob_lm 0 --ppo_iters 8 --ppo_clip_param 0.2
+
+pn train.py --batch_size 50 --learning_rate 3e-5 --checkpoint_path checkpoints/ppo_experiments/ppo_3e5_50_10_0_2/ --save_checkpoint_every 20 --val_images_use 5000 --max_epochs 1 --self_critical_after 0  --seq_per_img 1 --start_from checkpoints/coco_on_cc_rm_8_exp_1_3e5/ --use_cider --id_language_eval checkpoints_ppo_experiments_ppo_3e5_50_10_0_2 --cider_model ../hard_negative_all_outputs_Apr_3/pytorch_model_2.bin --ppo --drop_prob_lm 0 --ppo_iters 10 --ppo_clip_param 0.2
+
+
+Undone 
+
+python train.py --batch_size 50 --learning_rate 3e-5 --checkpoint_path checkpoints/ppo_experiments/ppo_3e5_50_4_0_3/ --save_checkpoint_every 20 --val_images_use 5000 --max_epochs 1 --self_critical_after 0  --seq_per_img 1 --start_from checkpoints/coco_on_cc_rm_8_exp_1_3e5/ --use_cider --id_language_eval checkpoints_ppo_experiments_ppo_3e5_50_4_0_3 --cider_model ../hard_negative_all_outputs_Apr_3/pytorch_model_2.bin --ppo --drop_prob_lm 0 --ppo_iters 4 --ppo_clip_param 0.3
+
+python train.py --batch_size 50 --learning_rate 3e-5 --checkpoint_path checkpoints/ppo_experiments/ppo_3e5_50_10_0_2/ --save_checkpoint_every 20 --val_images_use 5000 --max_epochs 1 --self_critical_after 0  --seq_per_img 1 --start_from checkpoints/coco_on_cc_rm_8_exp_1_3e5/ --use_cider --id_language_eval checkpoints_ppo_experiments_ppo_3e5_50_10_0_2 --cider_model ../hard_negative_all_outputs_Apr_3/pytorch_model_2.bin --ppo --drop_prob_lm 0 --ppo_iters 10 --ppo_clip_param 0.2 --losses_log_every 10

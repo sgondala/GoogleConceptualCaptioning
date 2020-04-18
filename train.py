@@ -56,10 +56,22 @@ def eval_cider_and_append_values(predictions, writer, key, start_iteration, batc
     return start_iteration + (end_number + 1) * losses_log_every
 
 def train(opt):
+    print("In train")
     opt.use_fc, opt.use_att = utils.if_use_feat(opt.caption_model)
     
     loader = DataLoader(opt)
+    actual_input_json = opt.input_json
+    print("Actual input json ", actual_input_json)
+
+    opt.input_json = 'data/cocotalk_coco8_split_as_train_val.json'
+    print("Changed input json ", opt.input_json)
+    # assert False
     loader_for_eval_scores = DataLoader(opt)
+    # assert False
+
+    opt.input_json = actual_input_json
+    print("Make sure input json is set back ", opt.input_json)
+
     opt.vocab_size = loader.vocab_size
     opt.seq_length = loader.seq_length
 
@@ -355,10 +367,10 @@ def train(opt):
                         start_iteration_number = iteration - opt.save_checkpoint_every
 
                         end_iteration_val = eval_cider_and_append_values(greedy_captions_since_last_checkpoint, tb_summary_writer, 'greedy_generated_captions_actual_cider_scores', start_iteration_number, opt.batch_size, opt.losses_log_every, opt, 'greedy_captions')
-                        assert end_iteration_val == iteration, str(end_iteration_val) + ',' + str(iteration)
+                        # assert end_iteration_val == iteration, str(end_iteration_val) + ',' + str(iteration)
 
                         end_iteration_val = eval_cider_and_append_values(gen_captions_since_last_checkpoint, tb_summary_writer, 'gen_generated_captions_actual_cider_scores', start_iteration_number, opt.batch_size, opt.losses_log_every, opt, 'gen_captions')
-                        assert end_iteration_val == iteration
+                        # assert end_iteration_val == iteration
 
                         previous_iteration_losses_logged = iteration
 
