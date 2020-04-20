@@ -59,14 +59,14 @@ def train(opt):
     print("In train")
     opt.use_fc, opt.use_att = utils.if_use_feat(opt.caption_model)
     
-    loader = DataLoader(opt)
+    loader = DataLoader(opt, None)
     actual_input_json = opt.input_json
     print("Actual input json ", actual_input_json)
 
     opt.input_json = 'data/cocotalk_coco8_split_as_train_val.json'
     print("Changed input json ", opt.input_json)
     # assert False
-    loader_for_eval_scores = DataLoader(opt)
+    loader_for_eval_scores = DataLoader(opt, loader.h5_label_file)
     # assert False
 
     opt.input_json = actual_input_json
