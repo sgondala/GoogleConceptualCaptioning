@@ -66,7 +66,7 @@ def train(opt):
     opt.input_json = 'data/cocotalk_coco8_split_as_train_val.json'
     print("Changed input json ", opt.input_json)
     # assert False
-    loader_for_eval_scores = DataLoader(opt, loader.h5_label_file)
+    loader_for_eval_scores = DataLoader(opt, loader.h5_label_file, loader.att_loader, loader.box_loader, loader.width_loader, loader.height_loader)
     # assert False
 
     opt.input_json = actual_input_json
