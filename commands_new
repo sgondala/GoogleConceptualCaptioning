@@ -33,7 +33,7 @@ model-train-best
 
 Base models trained using CELoss - 
 
-COCO CE loss (Rachel) - python train.py --batch_size 100 --learning_rate 3e-5 --checkpoint_path checkpoints/coco_on_base_rm_8_exp_1_3e5_Apr_14/ --save_checkpoint_every 300 --seq_per_img 5 --val_images_use 5000 --max_epochs 6 --id_language_eval checkpoints_coco_on_base_rm_8_exp_1_3e5_Apr_14 --input_json data/cocotalk_with_cc_vocab_rm_8_same_order.json --losses_log_every 10 --language_eval 0 --do_not_generate_cider_plots --self_critical_after -1 --drop_prob_lm 0.5
+COCO CE loss (Rachel) - python train.py --batch_size 100 --learning_rate 3e-5 --checkpoint_path checkpoints/coco_on_base_rm_8_exp_1_3e5_Apr_14/ --save_checkpoint_every 300 --seq_per_img 5 --val_images_use 5000 --max_epochs 6 --id_language_eval checkpoints_coco_on_base_rm_8_exp_1_3e5_Apr_14 --input_json data/cocotalk_with_cc_vocab_rm_8_same_order.json --losses_log_every 10 --language_eval 0 --do_not_generate_cider_plots --self_critical_after -1 --drop_prob_lm 0.5 --val_json data/cocotalk_with_cc_vocab_rm_8_same_order.json
 
 COCO CE loss on CC (Sashank) - python train.py --batch_size 100 --learning_rate 3e-5 --checkpoint_path checkpoints/coco_on_cc_rm_8_exp_1_3e5_Apr_14/ --save_checkpoint_every 300 --seq_per_img 5 --val_images_use 5000 --max_epochs 6 --id_language_eval checkpoints_coco_on_cc_rm_8_exp_1_3e5_Apr_14 --input_json data/cocotalk_with_cc_vocab_rm_8_same_order.json --losses_log_every 10 --language_eval 0 --start_from checkpoints/conceptual_base_on_att2in/ --do_not_generate_cider_plots --self_critical_after -1 --drop_prob_lm 0.5
 
@@ -91,3 +91,22 @@ SC training using CIDEr predictor model on COCO80-val-val - python train.py --ba
 SC training on CIDEr predictor model on COCO80-val-test - python train.py --batch_size 50 --learning_rate 5e-6 --checkpoint_path checkpoints/coco_80_val_test_sc_on_exp1_cider_5e6_ppo --save_checkpoint_every 50 --val_images_use 5000 --max_epochs 4 --start_from checkpoints/coco_on_cc_rm_8_exp_1_3e5/  --id_language_eval checkpoints_coco_80_val_test_sc_on_exp1_cider_5e6_ppo --use_cider --cider_model ../hard_negative_all_outputs_Apr_10/pytorch_model_2.bin  --losses_log_every 25 --input_json data/cocotalk_with_coco_80_val_test_as_train.json
 
 SC training on CIDEr predictor model on COCO80-val-val + COCO80-val-test - python train.py --batch_size 50 --learning_rate 5e-6 --checkpoint_path checkpoints/coco_80_val_complete_sc_on_exp1_cider_5e6_ppo/ --save_checkpoint_every 50 --val_images_use 5000 --max_epochs 4 --start_from checkpoints/coco_on_cc_rm_8_exp_1_3e5/  --id_language_eval checkpoints_coco_80_val_complete_sc_on_exp1_cider_5e6_ppo --use_cider --cider_model ../hard_negative_all_outputs_Apr_10/pytorch_model_2.bin  --losses_log_every 25 --input_json data/cocotalk_coco_80_val_as_train.json
+
+
+Experiments on base 
+
+
+python train.py --batch_size 50 --learning_rate 5e-6 --checkpoint_path checkpoints/experiments_on_coco_without_cc_Apr_14/coco_8_val_val_4_0_1 --save_checkpoint_every 10 --val_images_use 1000 --max_epochs 3 --start_from checkpoints/coco_on_base_rm_8_exp_1_3e5_Apr_14/ --use_cider --id_language_eval checkpoints_experiments_on_coco_without_cc_Apr_14_coco_8_val_val_4_0_1 --cider_model ../hard_negative_all_outputs_Apr_10/pytorch_model_2.bin  --losses_log_every 5 --input_json data/cocotalk_coco8_split_as_train_val.json --ppo_iters 4 --ppo_clip_param 0.1
+
+
+python train.py --batch_size 50 --learning_rate 5e-6 --checkpoint_path checkpoints/experiments_on_coco_without_cc_Apr_14/coco_72_ref_caps_sc_4_0_1 --save_checkpoint_every 10 --val_images_use 5000 --max_epochs 3 --start_from checkpoints/coco_on_base_rm_8_exp_1_3e5_Apr_14/ --use_ref_caps --input_json data/cocotalk_with_cc_vocab_rm_8_same_order.json --id_language_eval checkpoints_experiments_on_coco_without_cc_Apr_14_coco_72_ref_caps_sc_4_0_1 --losses_log_every 5 --ppo_iters 4 --ppo_clip_param 0.1
+
+
+python train.py --batch_size 50 --learning_rate 5e-6 --checkpoint_path checkpoints/experiments_on_coco_without_cc_Apr_14_3/coco_72_ref_caps_sc_4_0_1 --save_checkpoint_every 10 --val_images_use 5000 --max_epochs 3 --start_from checkpoints/coco_on_base_rm_8_exp_1_3e5_Apr_14_3/ --use_ref_caps --input_json data/cocotalk_with_cc_vocab_rm_8_same_order.json --id_language_eval checkpoints_experiments_on_coco_without_cc_Apr_14_3_coco_72_ref_caps_sc_4_0_1 --losses_log_every 5 --ppo_iters 4 --ppo_clip_param 0.1 --val_json data/cocotalk_with_cc_vocab_rm_8_same_order.json
+
+
+
+
+Commands on COCO8 without CC models - 
+
+SC train on COCO8_val_val with GT - python train.py --batch_size 100 --learning_rate 1e-5 --checkpoint_path checkpoints/coco_8_val_val_sc_on_coco_on_cc_ref_caps_5e6_ppo/ --save_checkpoint_every 50 --val_images_use 5000 --max_epochs 3 --start_from checkpoints/  --use_ref_caps --id_language_eval coco_8_val_val_sc_on_coco_on_cc_ref_caps_5e6_ppo --input_json data/cocotalk_coco8_split_as_train_val.json --losses_log_every 10 --val_json data/cocotalk_coco8_split_as_train_val.json --ppo_iters 2 --ppo_clip_param 0.1

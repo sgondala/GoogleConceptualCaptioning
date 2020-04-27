@@ -24,6 +24,7 @@ from misc.loss_wrapper import LossWrapper
 from misc.utils import decode_sequence
 from eval_utils import language_eval
 import math
+from torchtext.vocab import GloVe
 
 try:
     import tensorboardX as tb
@@ -63,12 +64,10 @@ def train(opt):
     actual_input_json = opt.input_json
     print("Actual input json ", actual_input_json)
 
-    opt.input_json = 'data/cocotalk_coco8_split_as_train_val.json'
+    opt.input_json = opt.val_json
     print("Changed input json ", opt.input_json)
-    # assert False
     loader_for_eval_scores = DataLoader(opt)
-    # assert False
-
+    
     opt.input_json = actual_input_json
     print("Make sure input json is set back ", opt.input_json)
 
@@ -121,7 +120,7 @@ def train(opt):
     
     model_greedy = None
     initial_greedy_model_weights = []
-    if True:
+    if opt.self_critical_after != -1:
         model_greedy = models.setup(opt).cuda()
         model_greedy.eval()
         initial_greedy_model_weights = list(model_greedy.parameters())
@@ -329,7 +328,7 @@ def train(opt):
                                 'dataset': opt.input_json}
                 eval_kwargs.update(vars(opt))
                 val_loss, predictions, lang_stats = eval_utils.eval_split(
-                    dp_model, lw_model.crit, loader_for_eval_scores, eval_kwargs)
+                    dp_model, lw_model.crit, loader, eval_kwargs)
 
                 # Rechecking on train data too
                 print("Calculating validation score for train data")
@@ -398,11 +397,12 @@ def train(opt):
 
                 save_checkpoint(model, infos, optimizer, histories)
                 
+                if opt.save_all_checkpoints:
+                    save_checkpoint(model, infos, optimizer, append=str(iteration))
+
                 if best_flag:
-                    print("Saving best flag")
-                    if opt.save_all_checkpoints:
-                        save_checkpoint(model, infos, optimizer, append=str(iteration))
                     save_checkpoint(model, infos, optimizer, append='best')
+                    pass
 
                 if train_lang_stats is not None:
                     if train_lang_stats['CIDEr'] > best_train_score:
@@ -455,5 +455,8 @@ assert len(opt.id_language_eval) > 0
 if opt.self_critical_after != -1:
     if not opt.do_not_use_ppo and opt.drop_prob_lm > 0:
         assert False, "Set dropout prob to 0 during PPO training"
+
+if opt.enable_cbs_support:
+    assert opt.input_encoding_size == 300
 
 train(opt)
