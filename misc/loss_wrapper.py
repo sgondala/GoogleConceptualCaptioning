@@ -66,8 +66,28 @@ class LossWrapper(torch.nn.Module):
             self.model.train()
             gen_result, old_logprobs = self.model(fc_feats, att_feats, att_masks, opt={'sample_max':0}, mode='sample')
 
+            # All sentences{}
+
+            # For every caption
+                # Say caption i
+                # For every token
+                    # Current sentence = [apprend all tokens till now]
+                        # Generate sentences using beam search? - Fast
+                            # All_sentences[i] += [these to sentences]
+            
+            # All sentences [i] = 10 * 20 sentences
+            # If batch size = n
+            # All sentences = n * 10 * 20
+            # Collate all into a singel array = [] - 200n
+            # Calcualte cider for that array 
+            # We get 200n cider scores
+            # Now you can just use indexing to calculate cider for cider[i,j] - Assigning right
+
             # The above function returns prob of *all tokens* at each step
             # We need to pick the probabiliity of selected token
+            # Other things to take care - log prob - Line 130 new_logprobs[:, 1:] = new_logprobs[:, 1:] * Variable((gen_result[:, :-1] > 0).float(), requires_grad=False)
+            # 
+
             old_logprobs = old_logprobs.gather(2, gen_result.unsqueeze(2)).squeeze(2)
             assert old_logprobs.shape == gen_result.shape
 
