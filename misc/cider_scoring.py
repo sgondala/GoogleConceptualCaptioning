@@ -46,5 +46,7 @@ def get_self_critical_cider_reward_using_model(cider_dataset, model, captions_gr
     assert len(cider_gen) == len(cider_greedy)
     scores = (cider_gen - cider_greedy) * opt.cider_reward_weight
 
+    # Scores = [10,20,30] - (3)
+    # Reward = [[10,10,10...., 10],[20,20,.... ,20],[30,30,...30]] - 3*20
     rewards = np.repeat(scores[:, np.newaxis], length_of_output, 1)
     return rewards, average_greedy_cider, average_gen_cider

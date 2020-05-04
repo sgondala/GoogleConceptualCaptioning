@@ -110,3 +110,87 @@ python train.py --batch_size 50 --learning_rate 5e-6 --checkpoint_path checkpoin
 Commands on COCO8 without CC models - 
 
 SC train on COCO8_val_val with GT - python train.py --batch_size 100 --learning_rate 1e-5 --checkpoint_path checkpoints/coco_8_val_val_sc_on_coco_on_cc_ref_caps_5e6_ppo/ --save_checkpoint_every 50 --val_images_use 5000 --max_epochs 3 --start_from checkpoints/  --use_ref_caps --id_language_eval coco_8_val_val_sc_on_coco_on_cc_ref_caps_5e6_ppo --input_json data/cocotalk_coco8_split_as_train_val.json --losses_log_every 10 --val_json data/cocotalk_coco8_split_as_train_val.json --ppo_iters 2 --ppo_clip_param 0.1
+
+
+
+SC on COCO72 with GT - python train.py --batch_size 100 --learning_rate 1e-5 --checkpoint_path checkpoints/coco_sc_with_coco72_ref_caps_1e5_100_2_0_1_on_coco_on_base_rm_8_exp_1_3e5_Apr_26_30_epochs_batch_50/ --save_checkpoint_every 20 --val_images_use 5000 --max_epochs 3 --start_from checkpoints/coco_on_base_rm_8_exp_1_3e5_Apr_26_30_epochs_batch_50/ --use_ref_caps --input_json data/cocotalk_with_cc_vocab_rm_8_same_order.json --losses_log_every 10 --val_json data/cocotalk_with_cc_vocab_rm_8_same_order.json --ppo_iters 2 --ppo_clip_param 0.1
+
+
+
+
+python train.py --batch_size 100 --learning_rate 5e-6 --checkpoint_path checkpoints/coco_sc_with_coco72_ref_caps_5e6_100_2_0_1_on_coco_on_base_rm_8_exp_1_3e5_Apr_14/ --save_checkpoint_every 20 --val_images_use 5000 --max_epochs 3 --start_from checkpoints/coco_on_base_rm_8_exp_1_3e5_Apr_14/ --use_ref_caps --input_json data/cocotalk_with_cc_vocab_rm_8_same_order.json --losses_log_every 10 --val_json data/cocotalk_coco8_split_as_train_val.json --ppo_iters 2 --ppo_clip_param 0.1
+
+
+
+Train COCO on base again with all checkpoints - python train.py --batch_size 50 --learning_rate 3e-5 --checkpoint_path checkpoints/coco_on_base_rm_8_exp_1_3e5_Apr_30_30_epochs_batch_50/ --save_checkpoint_every 700 --seq_per_img 5 --val_images_use 5000 --max_epochs 30 --input_json data/cocotalk_with_cc_vocab_rm_8_same_order.json --losses_log_every 10 --language_eval 0 --do_not_generate_cider_plots --self_critical_after -1 --drop_prob_lm 0.5 --val_json data/cocotalk_with_cc_vocab_rm_8_same_order.json --save_all_checkpoints
+
+
+
+
+What am I doing? - Training for every 5 epochs 
+
+
+python train.py --batch_size 100 --learning_rate 1e-5 --checkpoint_path checkpoints/coco_sc_with_coco72_ref_caps_1e5_100_2_0_1_on_coco_on_base_rm_8_exp_1_3e5_Apr_30_30_epochs_batch_50_35001_val_json_coco_8_split/ --save_checkpoint_every 50 --val_images_use 5000 --max_epochs 5 --start_from checkpoints/coco_on_base_rm_8_exp_1_3e5_Apr_30_30_epochs_batch_50_35001/ --use_ref_caps --input_json data/cocotalk_with_cc_vocab_rm_8_same_order.json --losses_log_every 25 --val_json data/cocotalk_coco8_split_as_train_val.json --ppo_iters 2 --ppo_clip_param 0.1
+
+#!/bin/bash
+
+conda activate vilbert_base
+
+python train.py --batch_size 100 --learning_rate 1e-5 --checkpoint_path checkpoints/coco_sc_with_coco_8_val_ref_caps_1e5_100_2_0_1_on_coco_on_base_rm_8_exp_1_3e5_Apr_30_30_epochs_batch_50_7001/ --save_checkpoint_every 50 --val_images_use 5000 --max_epochs 5 --start_from checkpoints/coco_on_base_rm_8_exp_1_3e5_Apr_30_30_epochs_batch_50_7001/ --use_ref_caps --input_json data/cocotalk_coco8_split_as_train_val.json --losses_log_every 25 --val_json data/cocotalk_coco8_split_as_train_val.json --ppo_iters 2 --ppo_clip_param 0.1
+
+python train.py --batch_size 100 --learning_rate 1e-5 --checkpoint_path checkpoints/coco_sc_with_coco_8_val_ref_caps_1e5_100_2_0_1_on_coco_on_base_rm_8_exp_1_3e5_Apr_30_30_epochs_batch_50_14001/ --save_checkpoint_every 50 --val_images_use 5000 --max_epochs 5 --start_from checkpoints/coco_on_base_rm_8_exp_1_3e5_Apr_30_30_epochs_batch_50_14001/ --use_ref_caps --input_json data/cocotalk_coco8_split_as_train_val.json --losses_log_every 25 --val_json data/cocotalk_coco8_split_as_train_val.json --ppo_iters 2 --ppo_clip_param 0.1
+
+python train.py --batch_size 100 --learning_rate 1e-5 --checkpoint_path checkpoints/coco_sc_with_coco_8_val_ref_caps_1e5_100_2_0_1_on_coco_on_base_rm_8_exp_1_3e5_Apr_30_30_epochs_batch_50_21001/ --save_checkpoint_every 50 --val_images_use 5000 --max_epochs 5 --start_from checkpoints/coco_on_base_rm_8_exp_1_3e5_Apr_30_30_epochs_batch_50_21001/ --use_ref_caps --input_json data/cocotalk_coco8_split_as_train_val.json --losses_log_every 25 --val_json data/cocotalk_coco8_split_as_train_val.json --ppo_iters 2 --ppo_clip_param 0.1
+
+python train.py --batch_size 100 --learning_rate 1e-5 --checkpoint_path checkpoints/coco_sc_with_coco_8_val_ref_caps_1e5_100_2_0_1_on_coco_on_base_rm_8_exp_1_3e5_Apr_30_30_epochs_batch_50_28001/ --save_checkpoint_every 50 --val_images_use 5000 --max_epochs 5 --start_from checkpoints/coco_on_base_rm_8_exp_1_3e5_Apr_30_30_epochs_batch_50_28001/ --use_ref_caps --input_json data/cocotalk_coco8_split_as_train_val.json --losses_log_every 25 --val_json data/cocotalk_coco8_split_as_train_val.json --ppo_iters 2 --ppo_clip_param 0.1
+
+python train.py --batch_size 100 --learning_rate 1e-5 --checkpoint_path checkpoints/coco_sc_with_coco_8_val_ref_caps_1e5_100_2_0_1_on_coco_on_base_rm_8_exp_1_3e5_Apr_30_30_epochs_batch_50_35001/ --save_checkpoint_every 50 --val_images_use 5000 --max_epochs 5 --start_from checkpoints/coco_on_base_rm_8_exp_1_3e5_Apr_30_30_epochs_batch_50_35001/ --use_ref_caps --input_json data/cocotalk_coco8_split_as_train_val.json --losses_log_every 25 --val_json data/cocotalk_coco8_split_as_train_val.json --ppo_iters 2 --ppo_clip_param 0.1
+
+python train.py --batch_size 100 --learning_rate 1e-5 --checkpoint_path checkpoints/coco_sc_with_coco_8_val_ref_caps_1e5_100_2_0_1_on_coco_on_base_rm_8_exp_1_3e5_Apr_30_30_epochs_batch_50_42001/ --save_checkpoint_every 50 --val_images_use 5000 --max_epochs 5 --start_from checkpoints/coco_on_base_rm_8_exp_1_3e5_Apr_30_30_epochs_batch_50_42001/ --use_ref_caps --input_json data/cocotalk_coco8_split_as_train_val.json --losses_log_every 25 --val_json data/cocotalk_coco8_split_as_train_val.json --ppo_iters 2 --ppo_clip_param 0.1
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#!/bin/bash 
+
+
+
+python eval.py --model checkpoints/coco_on_base_rm_8_exp_1_3e5_Apr_30_30_epochs_batch_50/model-7001.pth --infos_path checkpoints/coco_on_base_rm_8_exp_1_3e5_Apr_30_30_epochs_batch_50/infos_-7001.pkl --input_json data/cocotalk_coco8_split_as_train_val.json --split val --out_file_path eval_results/coco_8_val_test_on_coco_on_base_rm_8_exp_1_3e5_Apr_30_30_epochs_batch_50_7001 --batch_size 500 --beam_size 1 --language_eval 0
+
+python eval.py --model checkpoints/coco_on_base_rm_8_exp_1_3e5_Apr_30_30_epochs_batch_50/model-14001.pth --infos_path checkpoints/coco_on_base_rm_8_exp_1_3e5_Apr_30_30_epochs_batch_50/infos_-14001.pkl --input_json data/cocotalk_coco8_split_as_train_val.json --split val --out_file_path eval_results/coco_8_val_test_on_coco_on_base_rm_8_exp_1_3e5_Apr_30_30_epochs_batch_50_14001 --batch_size 500 --beam_size 1 --language_eval 0
+
+python eval.py --model checkpoints/coco_on_base_rm_8_exp_1_3e5_Apr_30_30_epochs_batch_50/model-21001.pth --infos_path checkpoints/coco_on_base_rm_8_exp_1_3e5_Apr_30_30_epochs_batch_50/infos_-21001.pkl --input_json data/cocotalk_coco8_split_as_train_val.json --split val --out_file_path eval_results/coco_8_val_test_on_coco_on_base_rm_8_exp_1_3e5_Apr_30_30_epochs_batch_50_21001 --batch_size 500 --beam_size 1 --language_eval 0
+
+python eval.py --model checkpoints/coco_on_base_rm_8_exp_1_3e5_Apr_30_30_epochs_batch_50/model-28001.pth --infos_path checkpoints/coco_on_base_rm_8_exp_1_3e5_Apr_30_30_epochs_batch_50/infos_-28001.pkl --input_json data/cocotalk_coco8_split_as_train_val.json --split val --out_file_path eval_results/coco_8_val_test_on_coco_on_base_rm_8_exp_1_3e5_Apr_30_30_epochs_batch_50_28001 --batch_size 500 --beam_size 1 --language_eval 0
+
+python eval.py --model checkpoints/coco_on_base_rm_8_exp_1_3e5_Apr_30_30_epochs_batch_50/model-35001.pth --infos_path checkpoints/coco_on_base_rm_8_exp_1_3e5_Apr_30_30_epochs_batch_50/infos_-35001.pkl --input_json data/cocotalk_coco8_split_as_train_val.json --split val --out_file_path eval_results/coco_8_val_test_on_coco_on_base_rm_8_exp_1_3e5_Apr_30_30_epochs_batch_50_35001 --batch_size 500 --beam_size 1 --language_eval 0
+
+python eval.py --model checkpoints/coco_on_base_rm_8_exp_1_3e5_Apr_30_30_epochs_batch_50/model-42001.pth --infos_path checkpoints/coco_on_base_rm_8_exp_1_3e5_Apr_30_30_epochs_batch_50/infos_-42001.pkl --input_json data/cocotalk_coco8_split_as_train_val.json --split val --out_file_path eval_results/coco_8_val_test_on_coco_on_base_rm_8_exp_1_3e5_Apr_30_30_epochs_batch_50_42001 --batch_size 500 --beam_size 1 --language_eval 0
+
+
+
+
+
+Training for caption generation - 
+
+
+python train.py --batch_size 100 --learning_rate 1e-5 --checkpoint_path checkpoints/coco_72_train_sc_for_caption_gen_vilbert_cc_gold_and_random_only/ --save_checkpoint_every 500 --val_images_use 500 --max_epochs 5 --start_from checkpoints/coco_on_base_rm_8_exp_1_3e5_Apr_30_30_epochs_batch_50/ --use_cider --input_json data/cocotalk_with_cc_vocab_rm_8_same_order.json --val_json data/cocotalk_with_cc_vocab_rm_8_same_order.json --losses_log_every 1 --cider_model ../vilbert_beta/checkpoints/data_for_coco_8_without_base/cc_gold_and_random_only/pytorch_model_best.bin --ppo_iters 2 --ppo_clip_param 0.1 --id -28001
+
+
+find . -name '[!0-9]*[0-9].pkl' -delete
+
+
+cp coco_on_base_rm_8_exp_1_3e5_Apr_30_30_epochs_batch_50/model-42001.pth coco_on_base_rm_8_exp_1_3e5_Apr_30_30_epochs_batch_50_42001/model.pth
+cp coco_on_base_rm_8_exp_1_3e5_Apr_30_30_epochs_batch_50/infos_-42001.pkl coco_on_base_rm_8_exp_1_3e5_Apr_30_30_epochs_batch_50_42001/infos_.pkl
+cp coco_on_base_rm_8_exp_1_3e5_Apr_30_30_epochs_batch_50/optimizer-42001.pth coco_on_base_rm_8_exp_1_3e5_Apr_30_30_epochs_batch_50_42001/optimizer.pth
