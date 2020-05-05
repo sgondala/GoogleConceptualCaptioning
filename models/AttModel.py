@@ -26,6 +26,7 @@ import misc.utils as utils
 from torch.nn.utils.rnn import PackedSequence, pack_padded_sequence, pad_packed_sequence
 
 from .CaptionModel import CaptionModel
+from torchtext.vocab import GloVe
 
 bad_endings = ['a','an','the','in','for','at','of','with','before','after','on','upon','near','to','is','are','am']
 bad_endings += ['the']
@@ -67,7 +68,14 @@ class AttModel(CaptionModel):
 
         self.ss_prob = 0.0 # Schedule sampling probability
 
-        self.embed = nn.Sequential(nn.Embedding(self.vocab_size + 1, self.input_encoding_size),
+        embedding_layer = None
+        
+        if opt.enable_cbs_support:
+            glove_vectors = self.initialize_glove(opt)
+            embedding_layer = nn.Embedding.from_pretrained(glove_vectors, freeze=True)
+        else:
+            embedding_layer = nn.Embedding(self.vocab_size + 1, self.input_encoding_size)
+        self.embed = nn.Sequential(embedding_layer,
                                 nn.ReLU(),
                                 nn.Dropout(self.drop_prob_lm))
         self.fc_embed = nn.Sequential(nn.Linear(self.fc_feat_size, self.rnn_size),
@@ -82,8 +90,17 @@ class AttModel(CaptionModel):
 
         self.logit_layers = getattr(opt, 'logit_layers', 1)
         if self.logit_layers == 1:
-            self.logit = nn.Linear(self.rnn_size, self.vocab_size + 1)
+            if opt.enable_cbs_support:
+                temp_linear_layer = nn.Linear(self.input_encoding_size, self.vocab_size + 1)
+                temp_linear_layer.weight = embedding_layer.weight
+                self.logit = nn.Sequential(
+                    nn.Linear(self.rnn_size, self.input_encoding_size),
+                    nn.Tanh(), 
+                    temp_linear_layer)
+            else:
+                self.logit = nn.Linear(self.rnn_size, self.vocab_size + 1)
         else:
+            assert False
             self.logit = [[nn.Linear(self.rnn_size, self.rnn_size), nn.ReLU(), nn.Dropout(0.5)] for _ in range(opt.logit_layers - 1)]
             self.logit = nn.Sequential(*(reduce(lambda x,y:x+y, self.logit) + [nn.Linear(self.rnn_size, self.vocab_size + 1)]))
         self.ctx2att = nn.Linear(self.rnn_size, self.att_hid_size)
@@ -91,6 +108,19 @@ class AttModel(CaptionModel):
         # For remove bad endding
         self.vocab = opt.vocab
         self.bad_endings_ix = [int(k) for k,v in self.vocab.items() if v in bad_endings]
+
+    def initialize_glove(self, opt):
+        # Taken from https://github.com/nocaps-org/updown-baseline/blob/266081042bc2f0c3e6676ee0b5e204036cb6a74a/updown/models/updown_captioner.py#L148
+        glove = GloVe(name="42B", dim=300)
+        glove_vectors = torch.zeros(self.vocab_size + 1, 300)
+        for index, word in opt.vocab.items():
+            if word in glove.stoi:
+                glove_vectors[index] = glove.vectors[glove.stoi[word]]
+            elif word != 'UNK':
+                # Actual paper - pad,unk - 0; Boundary - random
+                # We give 0 to all because pad = boundary for us
+                glove_vectors[i] = 2 * torch.randn(300) - 1
+        return glove_vectors
 
     def init_hidden(self, bsz):
         weight = next(self.parameters())

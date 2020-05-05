@@ -191,6 +191,5 @@ python train.py --batch_size 100 --learning_rate 1e-5 --checkpoint_path checkpoi
 find . -name '[!0-9]*[0-9].pkl' -delete
 
 
-cp coco_on_base_rm_8_exp_1_3e5_Apr_30_30_epochs_batch_50/model-42001.pth coco_on_base_rm_8_exp_1_3e5_Apr_30_30_epochs_batch_50_42001/model.pth
-cp coco_on_base_rm_8_exp_1_3e5_Apr_30_30_epochs_batch_50/infos_-42001.pkl coco_on_base_rm_8_exp_1_3e5_Apr_30_30_epochs_batch_50_42001/infos_.pkl
-cp coco_on_base_rm_8_exp_1_3e5_Apr_30_30_epochs_batch_50/optimizer-42001.pth coco_on_base_rm_8_exp_1_3e5_Apr_30_30_epochs_batch_50_42001/optimizer.pth
+
+python eval.py --model checkpoints/hard_negative_continuous_models_coco_8_ID_3_ON_CC/cider_0.000005_loop_number_5/model-train_best.pth --infos_path checkpoints/hard_negative_continuous_models_coco_8_ID_3_ON_CC/cider_0.000005_loop_number_5/infos_-train_best.pkl --input_json data/cocotalk_coco8_split_as_train_val.json --split val --out_file_path eval_results/coco_8_val_test_on_hard_negative_continuous_models_coco_8_ID_3_ON_CC_cider_0.000005_loop_number_5_train_best --batch_size 500 --beam_size 1 --language_eval 0
