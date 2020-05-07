@@ -87,7 +87,7 @@ class DataLoader(data.Dataset):
     def get_seq_length(self):
         return self.seq_length
 
-    def __init__(self, opt):
+    def __init__(self, opt, loaded_h5py = None, loaded_att = None, loaded_box = None, loaded_width = None, loaded_height = None):
         self.opt = opt
         self.batch_size = self.opt.batch_size
         self.seq_per_img = opt.seq_per_img
@@ -110,9 +110,14 @@ class DataLoader(data.Dataset):
         
         # open the hdf5 file
         print('DataLoader loading h5 file: ', opt.input_fc_dir, opt.input_att_dir, opt.input_box_dir, opt.input_label_h5)
-        if self.opt.input_label_h5 != 'none':
-            print('Input label h5 ', self.opt.input_label_h5) 
-            self.h5_label_file = h5py.File(self.opt.input_label_h5, 'r', driver='core')
+
+        if self.opt.input_label_h5 != "none":
+            if loaded_h5py == None:
+                print('Input label h5 ', self.opt.input_label_h5) 
+                self.h5_label_file = h5py.File(self.opt.input_label_h5, 'r', driver='core')
+            else:
+                print('Loaded input label h5 ', self.opt.input_label_h5) 
+                self.h5_label_file = loaded_h5py
             # load in the sequence data
             seq_size = self.h5_label_file['labels'].shape
             self.label = self.h5_label_file['labels'][:]
@@ -123,13 +128,29 @@ class DataLoader(data.Dataset):
             self.label_end_ix = self.h5_label_file['label_end_ix'][:]
         else:
             self.seq_length = 1
-
-        self.att_loader = HybridLoader(self.opt.input_att_dir, 'acc')
+        
+        if loaded_att == None:
+            self.att_loader = HybridLoader(self.opt.input_att_dir, 'acc')
+        else:
+            self.att_loader = loaded_att
+        
         self.box_loader = None
         if self.use_box:
-            self.box_loader = HybridLoader(self.opt.input_box_dir, 'box')
-        self.width_loader = HybridLoader(self.opt.input_fc_dir, 'width')
-        self.height_loader = HybridLoader(self.opt.input_fc_dir, 'height')
+            if loaded_box == None:
+                self.box_loader = HybridLoader(self.opt.input_box_dir, 'box')
+            else:
+                self.box_loader = loaded_box
+
+
+        if loaded_width == None:
+            self.width_loader = HybridLoader(self.opt.input_fc_dir, 'width')
+        else:
+            self.width_loader = loaded_width
+
+        if loaded_height == None:
+            self.height_loader = HybridLoader(self.opt.input_fc_dir, 'height')
+        else:
+            self.height_loader = loaded_height
 
         self.num_images = len(self.info['images']) # self.label_start_ix.shape[0]
         print('read %d image features' %(self.num_images))

@@ -64,14 +64,14 @@ def train(opt):
     print("In train")
     opt.use_fc, opt.use_att = utils.if_use_feat(opt.caption_model)
     
-    loader = DataLoader(opt)
+    loader = DataLoader(opt, None)
     actual_input_json = opt.input_json
     print("Actual input json ", actual_input_json)
 
     opt.input_json = opt.val_json
     print("Changed input json ", opt.input_json)
-    loader_for_eval_scores = DataLoader(opt)
-    
+    loader_for_eval_scores = DataLoader(opt, loader.h5_label_file, loader.att_loader, loader.box_loader, loader.width_loader, loader.height_loader)
+
     opt.input_json = actual_input_json
     print("Make sure input json is set back ", opt.input_json)
 
