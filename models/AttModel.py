@@ -115,11 +115,11 @@ class AttModel(CaptionModel):
         glove_vectors = torch.zeros(self.vocab_size + 1, 300)
         for index, word in opt.vocab.items():
             if word in glove.stoi:
-                glove_vectors[index] = glove.vectors[glove.stoi[word]]
+                glove_vectors[int(index)] = glove.vectors[glove.stoi[word]]
             elif word != 'UNK':
-                # Actual paper - pad,unk - 0; Boundary - random
+                # Nocaps paper - pad,unk - 0; Boundary - random
                 # We give 0 to all because pad = boundary for us
-                glove_vectors[i] = 2 * torch.randn(300) - 1
+                glove_vectors[int(index)] = 2 * torch.randn(300) - 1
         return glove_vectors
 
     def init_hidden(self, bsz):
