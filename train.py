@@ -24,6 +24,10 @@ from misc.loss_wrapper import LossWrapper
 from misc.utils import decode_sequence
 from eval_utils import language_eval
 import math
+from torchtext.vocab import GloVe
+
+import wandb
+wandb.init(project="cider_predictor")
 
 try:
     import tensorboardX as tb
@@ -34,6 +38,7 @@ except ImportError:
 def add_summary_value(writer, key, value, iteration):
     if writer:
         writer.add_scalar(key, value, iteration)
+    wandb.log({key: value}, step=iteration)
 
 def eval_cider_and_append_values(predictions, writer, key, start_iteration, batch_size, losses_log_every, opt, cache_file_key):
     out = language_eval(None, predictions, None, {'id_language_eval': opt.id_language_eval}, cache_file_key)
@@ -63,11 +68,9 @@ def train(opt):
     actual_input_json = opt.input_json
     print("Actual input json ", actual_input_json)
 
-    opt.input_json = 'data/cocotalk_coco8_split_as_train_val.json'
+    opt.input_json = opt.val_json
     print("Changed input json ", opt.input_json)
-    # assert False
     loader_for_eval_scores = DataLoader(opt, loader.h5_label_file, loader.att_loader, loader.box_loader, loader.width_loader, loader.height_loader)
-    # assert False
 
     opt.input_json = actual_input_json
     print("Make sure input json is set back ", opt.input_json)
@@ -81,6 +84,7 @@ def train(opt):
     histories = {}
     if opt.start_from is not None:
         # open old infos and check if models are compatible
+        print('Using file: infos_' + opt.id + '.pkl')
         with open(os.path.join(opt.start_from, 'infos_'+opt.id+'.pkl'), 'rb') as f:
             infos = utils.pickle_load(f)
             saved_model_opt = infos['opt']
@@ -118,10 +122,11 @@ def train(opt):
 
     opt.vocab = loader.get_vocab()
     model = models.setup(opt).cuda()
-    
+    # wandb.watch(model)
+
     model_greedy = None
     initial_greedy_model_weights = []
-    if True:
+    if opt.self_critical_after != -1:
         model_greedy = models.setup(opt).cuda()
         model_greedy.eval()
         initial_greedy_model_weights = list(model_greedy.parameters())
@@ -329,7 +334,7 @@ def train(opt):
                                 'dataset': opt.input_json}
                 eval_kwargs.update(vars(opt))
                 val_loss, predictions, lang_stats = eval_utils.eval_split(
-                    dp_model, lw_model.crit, loader_for_eval_scores, eval_kwargs)
+                    dp_model, lw_model.crit, loader, eval_kwargs)
 
                 # Rechecking on train data too
                 print("Calculating validation score for train data")
@@ -337,7 +342,7 @@ def train(opt):
 
                 if not opt.do_not_generate_cider_plots:
                     eval_kwargs_train = {'split': opt.train_split,
-                                    'dataset': opt.input_json}
+                                    'dataset': opt.val_json}
                     eval_kwargs_train.update(vars(opt))
                     _, _, train_lang_stats = eval_utils.eval_split(
                         dp_model, lw_model.crit, loader_for_eval_scores, eval_kwargs_train)
@@ -398,16 +403,19 @@ def train(opt):
 
                 save_checkpoint(model, infos, optimizer, histories)
                 
+                if opt.save_all_checkpoints:
+                    save_checkpoint(model, infos, optimizer, append=str(iteration))
+
                 if best_flag:
-                    print("Saving best flag")
-                    if opt.save_all_checkpoints:
-                        save_checkpoint(model, infos, optimizer, append=str(iteration))
+                    wandb.run.summary['CIDEr_train'] = best_val_score
                     save_checkpoint(model, infos, optimizer, append='best')
+                    pass
 
                 if train_lang_stats is not None:
                     if train_lang_stats['CIDEr'] > best_train_score:
                         best_train_score = train_lang_stats['CIDEr']
                         save_checkpoint(model, infos, optimizer, append='train_best')
+                        wandb.run.summary['CIDEr_train'] = best_train_score
                 
                 # dict_to_save = {}
                 # dict_to_save['gen_captions'] = gen_captions_all
@@ -450,10 +458,20 @@ opt = opts.parse_opt()
 
 assert opt.batch_size % opt.losses_log_every == 0
 assert opt.save_checkpoint_every % opt.losses_log_every == 0
-assert len(opt.id_language_eval) > 0
 
 if opt.self_critical_after != -1:
     if not opt.do_not_use_ppo and opt.drop_prob_lm > 0:
         assert False, "Set dropout prob to 0 during PPO training"
+
+if opt.enable_cbs_support:
+    assert opt.input_encoding_size == 300
+
+opt.id_language_eval = opt.checkpoint_path.replace('/', '_')
+print("Id language eval is ", opt.id_language_eval)
+
+wandb.run.name = opt.id_language_eval
+wandb.run.save()
+
+wandb.config.update(opt)
 
 train(opt)

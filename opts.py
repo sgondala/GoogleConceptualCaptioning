@@ -5,6 +5,7 @@ def parse_opt():
     # Data input settings
     parser.add_argument('--input_json', type=str, default='data/cocotalk_with_cc_vocab_rm_8_same_order_for_self_critical.json',
                     help='path to the json file containing additional info and vocab')
+    parser.add_argument('--val_json', type=str, default='data/cocotalk_coco8_split_as_train_val.json')    
     parser.add_argument('--input_fc_dir', type=str, default='/srv/share2/sgondala/data_for_captioning_models/trainval_resnet101_faster_rcnn_genome_36.tsv',
                     help='path to the directory containing the preprocessed fc feats')
     parser.add_argument('--input_att_dir', type=str, default='/srv/share2/sgondala/data_for_captioning_models/trainval_resnet101_faster_rcnn_genome_36.tsv',
@@ -195,6 +196,7 @@ def parse_opt():
     parser.add_argument('--classification_threshold', type=float, default=0.999)
     parser.add_argument('--do_not_generate_cider_plots', action='store_true')
     parser.add_argument('--train_split', type=str, default='train')
+    parser.add_argument('--enable_cbs_support', action='store_true')
    # parser.add_argument('--id_language_eval', type=str, default='')
     
     # PPO
