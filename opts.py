@@ -57,7 +57,7 @@ def parse_opt():
                     help='If use box, do we normalize box feature')
 
     # Optimization: General
-    parser.add_argument('--max_epochs', type=int, default=-1,
+    parser.add_argument('--max_epochs', type=int, default=3,
                     help='number of epochs')
     parser.add_argument('--batch_size', type=int, default=16,
                     help='minibatch size')
@@ -126,6 +126,7 @@ def parse_opt():
     # Evaluation/Checkpointing
     parser.add_argument('--val_images_use', type=int, default=5000,
                     help='how many images to use when periodically evaluating the validation loss? (-1 = all)')
+    parser.add_argument('--train_images_use_for_val', type=int, default=-1)                
     parser.add_argument('--save_checkpoint_every', type=int, default=2500,
                     help='how often to save a model checkpoint (in iterations)?')
     parser.add_argument('--save_all_checkpoints', action='store_true')
@@ -323,6 +324,9 @@ def add_eval_options(parser):
     
     # post processing
     parser.add_argument('--post_processing', type=int, default=0, help='nasty post processing')
+
+    # Other
+    parser.add_argument('--enable_cbs_support', action='store_true')
 
 def add_diversity_opts(parser):
     parser.add_argument('--sample_n', type=int, default=1,

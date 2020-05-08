@@ -89,6 +89,7 @@ def eval_split(model, crit, loader, eval_kwargs={}):
     remove_bad_endings = eval_kwargs.get('remove_bad_endings', 0)
     os.environ["REMOVE_BAD_ENDINGS"] = str(remove_bad_endings) # Use this nasty way to make other code clean since it's a global configuration
 
+    print("Split, Num images ", split, num_images)
     # Make sure in the evaluation mode
     model.eval()
 

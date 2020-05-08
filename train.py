@@ -243,93 +243,24 @@ def train(opt):
     try:
         while True:
             if epoch_done:
-                if True:
-                    # Assign the learning rate
-                    if epoch > opt.learning_rate_decay_start and opt.learning_rate_decay_start >= 0:
-                        frac = (epoch - opt.learning_rate_decay_start) // opt.learning_rate_decay_every
-                        decay_factor = opt.learning_rate_decay_rate  ** frac
-                        opt.current_lr = opt.learning_rate * decay_factor
-                    else:
-                        opt.current_lr = opt.learning_rate
-                    utils.set_lr(optimizer, opt.current_lr) # set the decayed rate
+                # Learning rate adjustments
+                if epoch > opt.learning_rate_decay_start and opt.learning_rate_decay_start >= 0:
+                    frac = (epoch - opt.learning_rate_decay_start) // opt.learning_rate_decay_every
+                    decay_factor = opt.learning_rate_decay_rate  ** frac
+                    opt.current_lr = opt.learning_rate * decay_factor
+                else:
+                    opt.current_lr = opt.learning_rate
+                utils.set_lr(optimizer, opt.current_lr) # set the decayed rate
                 
-                # Assign the scheduled sampling prob
-                # if epoch > opt.scheduled_sampling_start and opt.scheduled_sampling_start >= 0:
-                #     frac = (epoch - opt.scheduled_sampling_start) // opt.scheduled_sampling_increase_every
-                #     opt.ss_prob = min(opt.scheduled_sampling_increase_prob  * frac, opt.scheduled_sampling_max_prob)
-                #     model.ss_prob = opt.ss_prob
-
-                # If start self critical training
                 if opt.self_critical_after != -1 and epoch >= opt.self_critical_after:
                     sc_flag = True
                     if opt.use_ref_caps:
                         init_scorer(opt.cached_tokens)
                 else:
                     sc_flag = False
-                
-                epoch_done = False
-                    
-            # start = time.time()
-            # Load data from train split (0)
-            if iteration % 100 == 0:
-                print("Iteration number ", iteration)
-            data = loader.get_batch('train')
-            
-            torch.cuda.synchronize()
-            start = time.time()
 
-            tmp = [data['fc_feats'], data['att_feats'], data['labels'], data['masks'], data['att_masks']]
-            tmp = [_ if _ is None else _.cuda() for _ in tmp]
-            fc_feats, att_feats, labels, masks, att_masks = tmp
-            
-            image_ids = data['image_ids']
-            
-            model_out = dp_lw_model(fc_feats, att_feats, labels, masks, att_masks, data['gts'], torch.arange(0, len(data['gts'])), sc_flag, False, False, image_ids)
 
-            loss = model_out['loss'].mean()
-            train_loss = loss.item()
-            end = time.time()
-
-            # Update the iteration and epoch
-            iteration += 1
-            if data['bounds']['wrapped']:
-                epoch += 1
-                epoch_done = True
-                print("Epoch Done")
-
-            # Write the training loss summary
-            if ((iteration - 1) % opt.losses_log_every == 0 and iteration != 1):
-                add_summary_value(tb_summary_writer, 'train_loss', train_loss, iteration)
-                add_summary_value(tb_summary_writer, 'learning_rate', opt.current_lr, iteration)
-                if sc_flag:
-                    add_summary_value(tb_summary_writer, 'avg_reward', model_out['reward'].mean(), iteration)
-                    add_summary_value(tb_summary_writer, 'avg_greedy_cider', model_out.get('average_greedy_cider', 0), iteration)
-                    add_summary_value(tb_summary_writer, 'avg_gen_cider', model_out.get('average_gen_cider', 0), iteration)
-                    add_summary_value(tb_summary_writer, 'avg_greedy_slor', model_out.get('average_greedy_slor', 0), iteration)
-                    add_summary_value(tb_summary_writer, 'avg_gen_slor', model_out.get('average_gen_slor', 0), iteration)
-                    add_summary_value(tb_summary_writer, 'avg_greedy_vifidel', model_out.get('average_greedy_vifidel', 0), iteration)
-                    add_summary_value(tb_summary_writer, 'avg_gen_vifidel', model_out.get('average_gen_vifidel', 0), iteration)
-                    
-                    greedy_captions_since_last_checkpoint += model_out['greedy_captions']
-                    gen_captions_since_last_checkpoint += model_out['gen_captions']
-
-                    gen_captions_all[iteration] = model_out['gen_captions']
-                    greedy_captions_all[iteration] = model_out['greedy_captions']
-
-                loss_history[iteration] = train_loss if not sc_flag else model_out['reward'].mean()
-                lr_history[iteration] = opt.current_lr
-                ss_prob_history[iteration] = model.ss_prob
-
-            # update infos
-            infos['iter'] = iteration
-            infos['epoch'] = epoch
-            infos['iterators'] = loader.iterators
-            infos['split_ix'] = loader.split_ix
-            
-            # make evaluation on validation set, and save model
-            if ((iteration - 1) % opt.save_checkpoint_every == 0):
-                print("Calculating validation score for val data")
-                
+                print("Calculating validation score for val data")                
                 eval_kwargs = {'split': 'val',
                                 'dataset': opt.input_json}
                 eval_kwargs.update(vars(opt))
@@ -339,20 +270,14 @@ def train(opt):
                 # Rechecking on train data too
                 print("Calculating validation score for train data")
                 train_lang_stats = None
-
                 if not opt.do_not_generate_cider_plots:
-                    eval_kwargs_train = {'split': opt.train_split,
-                                    'dataset': opt.val_json}
+                    eval_kwargs_train = {'split': 'train',
+                                    'dataset': opt.val_json, 
+                                    'num_images': opt.train_images_use_for_val}
                     eval_kwargs_train.update(vars(opt))
                     _, _, train_lang_stats = eval_utils.eval_split(
                         dp_model, lw_model.crit, loader_for_eval_scores, eval_kwargs_train)
-                
-                # if opt.reduce_on_plateau:
-                #     if 'CIDEr' in lang_stats:
-                #         optimizer.scheduler_step(-lang_stats['CIDEr'])
-                #     else:
-                #         optimizer.scheduler_step(val_loss)
-                
+                    
                 # Write validation result into summary
                 add_summary_value(tb_summary_writer, 'validation loss', val_loss, iteration)
                 if lang_stats is not None:
@@ -363,7 +288,7 @@ def train(opt):
 
                 val_result_history[iteration] = {'loss': val_loss, 'lang_stats': lang_stats, 'predictions': predictions}
 
-                if iteration != 1: # Easy bookkeeping
+                if iteration != 0: # Easy bookkeeping
                     if not opt.do_not_generate_cider_plots:
                         # Calculate actual cider values of previous iterations
                         # Doing this here to take advantage of batching
@@ -407,9 +332,8 @@ def train(opt):
                     save_checkpoint(model, infos, optimizer, append=str(iteration))
 
                 if best_flag:
-                    wandb.run.summary['CIDEr_train'] = best_val_score
+                    wandb.run.summary['CIDEr'] = best_val_score
                     save_checkpoint(model, infos, optimizer, append='best')
-                    pass
 
                 if train_lang_stats is not None:
                     if train_lang_stats['CIDEr'] > best_train_score:
@@ -417,16 +341,71 @@ def train(opt):
                         save_checkpoint(model, infos, optimizer, append='train_best')
                         wandb.run.summary['CIDEr_train'] = best_train_score
                 
-                # dict_to_save = {}
-                # dict_to_save['gen_captions'] = gen_captions_all
-                # dict_to_save['greedy_captions'] = greedy_captions_all
-                # gen_captions_all = {}
-                # greedy_captions_all = {}
-                # json.dump(dict_to_save, open(opt.checkpoint_path + '/captions_' + str(iteration) + '.json', 'w'))
+                if epoch >= opt.max_epochs:
+                    break
+    
+                epoch_done = False
+                    
+            if iteration % 100 == 0:
+                print("Iteration number ", iteration)
 
+            data = loader.get_batch('train')
+            
+            torch.cuda.synchronize()
+            start = time.time()
+
+            tmp = [data['fc_feats'], data['att_feats'], data['labels'], data['masks'], data['att_masks']]
+            tmp = [_ if _ is None else _.cuda() for _ in tmp]
+            fc_feats, att_feats, labels, masks, att_masks = tmp
+            
+            image_ids = data['image_ids']
+            
+            model_out = dp_lw_model(fc_feats, att_feats, labels, masks, att_masks, data['gts'], torch.arange(0, len(data['gts'])), sc_flag, False, False, image_ids)
+
+            loss = model_out['loss'].mean()
+            train_loss = loss.item()
+            end = time.time()
+
+            # Update the iteration and epoch
+            iteration += 1
+            if data['bounds']['wrapped']:
+                epoch += 1
+                epoch_done = True
+                print("Epoch Done")
+
+            # Write the training loss summary
+            if ((iteration - 1) % opt.losses_log_every == 0 and iteration != 1):
+                add_summary_value(tb_summary_writer, 'train_loss', train_loss, iteration)
+                add_summary_value(tb_summary_writer, 'learning_rate', opt.current_lr, iteration)
+                if sc_flag:
+                    add_summary_value(tb_summary_writer, 'avg_reward', model_out['reward'].mean(), iteration)
+                    add_summary_value(tb_summary_writer, 'avg_greedy_cider', model_out.get('average_greedy_cider', 0), iteration)
+                    add_summary_value(tb_summary_writer, 'avg_gen_cider', model_out.get('average_gen_cider', 0), iteration)
+                    
+                    # add_summary_value(tb_summary_writer, 'avg_greedy_slor', model_out.get('average_greedy_slor', 0), iteration)
+                    # add_summary_value(tb_summary_writer, 'avg_gen_slor', model_out.get('average_gen_slor', 0), iteration)
+                    # add_summary_value(tb_summary_writer, 'avg_greedy_vifidel', model_out.get('average_greedy_vifidel', 0), iteration)
+                    # add_summary_value(tb_summary_writer, 'avg_gen_vifidel', model_out.get('average_gen_vifidel', 0), iteration)
+                    
+                    greedy_captions_since_last_checkpoint += model_out['greedy_captions']
+                    gen_captions_since_last_checkpoint += model_out['gen_captions']
+
+                    gen_captions_all[iteration] = model_out['gen_captions']
+                    greedy_captions_all[iteration] = model_out['greedy_captions']
+
+                loss_history[iteration] = train_loss if not sc_flag else model_out['reward'].mean()
+                lr_history[iteration] = opt.current_lr
+                ss_prob_history[iteration] = model.ss_prob
+
+            # update infos
+            infos['iter'] = iteration
+            infos['epoch'] = epoch
+            infos['iterators'] = loader.iterators
+            infos['split_ix'] = loader.split_ix
+            
             # Stop if reaching max epochs
-            if epoch >= opt.max_epochs and opt.max_epochs != -1:
-                break
+            # if epoch >= opt.max_epochs and opt.max_epochs != -1:
+            #     break
         
         if cider_model is not None:
             final_cider_model_weights = list(cider_model.parameters())
@@ -436,11 +415,10 @@ def train(opt):
             final_greedy_model_weights = list(model_greedy.parameters())
             assert initial_greedy_model_weights == final_greedy_model_weights
 
-        if True:
-            final_dict = {}
-            final_dict['gen_captions'] = gen_captions_all
-            final_dict['greedy_captions'] = greedy_captions_all
-            json.dump(final_dict, open(opt.checkpoint_path + '/captions_all.json', 'w'))
+        final_dict = {}
+        final_dict['gen_captions'] = gen_captions_all
+        final_dict['greedy_captions'] = greedy_captions_all
+        json.dump(final_dict, open(opt.checkpoint_path + '/captions_all.json', 'w'))
 
     except:
         print('Save ckpt on exception ...')
