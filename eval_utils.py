@@ -34,7 +34,6 @@ def language_eval(dataset, preds, preds_n, eval_kwargs, cache_file_key):
     import sys
     sys.path.append("coco-caption")
     annFile = 'coco-caption/annotations/captions_all2014.json'
-    # annFile = 'coco-caption/annotations/nocaps_ref_final_with_id.json'
 
     from pycocotools.coco import COCO
     from pycocoevalcap.eval import COCOEvalCap
