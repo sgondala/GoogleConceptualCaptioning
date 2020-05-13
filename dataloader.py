@@ -127,7 +127,8 @@ class DataLoader(data.Dataset):
             self.label_start_ix = self.h5_label_file['label_start_ix'][:]
             self.label_end_ix = self.h5_label_file['label_end_ix'][:]
         else:
-            assert False
+            # SC train using cider predictor
+            assert len(opt.cider_model) != 0
             self.seq_length = 1
         
         if loaded_att == None:

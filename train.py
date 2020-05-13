@@ -26,6 +26,13 @@ from eval_utils import language_eval
 import math
 from torchtext.vocab import GloVe
 
+# Reproducibility
+np.random.seed(42)
+torch.manual_seed(42)
+torch.cuda.manual_seed_all(42)
+torch.backends.cudnn.benchmark = False
+torch.backends.cudnn.deterministic = True
+
 import wandb
 wandb.init(project="cider_predictor")
 
@@ -70,7 +77,7 @@ def train(opt):
 
     opt.input_json = opt.val_json
     print("Changed input json ", opt.input_json)
-    loader_for_eval_scores = DataLoader(opt, loader.h5_label_file, loader.att_loader, loader.box_loader, loader.width_loader, loader.height_loader)
+    loader_for_eval_scores = DataLoader(opt, None, loader.att_loader, loader.box_loader, loader.width_loader, loader.height_loader)
 
     opt.input_json = actual_input_json
     print("Make sure input json is set back ", opt.input_json)
@@ -196,20 +203,11 @@ def train(opt):
 
     lw_model = LossWrapper(model, opt, vocab, cider_dataset, cider_model, open_gpt_model, open_gpt_tokenizer, unigram_prob_dict, glove_embedding, glove_word_to_ix, ground_truth_object_annotations, model_greedy, opt.is_classification_cider_model, opt.classification_threshold).cuda()
     
-    # if opt.noamopt:
-    #     assert opt.caption_model == 'transformer', 'noamopt can only work with transformer'
-    #     optimizer = utils.get_std_opt(model, factor=opt.noamopt_factor, warmup=opt.noamopt_warmup)
-    #     optimizer._step = iteration
-    # elif opt.reduce_on_plateau:
-    #     optimizer = utils.build_optimizer(model.parameters(), opt)
-    #     optimizer = utils.ReduceLROnPlateau(optimizer, factor=0.5, patience=3)
-    # else:
     optimizer = utils.build_optimizer(model.parameters(), opt)
     
     # Load the optimizer
     if vars(opt).get('start_from', None) is not None and os.path.isfile(os.path.join(opt.start_from,"optimizer.pth")):
         optimizer.load_state_dict(torch.load(os.path.join(opt.start_from, 'optimizer.pth')))
-
 
     def save_checkpoint(model, infos, optimizer, histories=None, append=''):
         if len(append) > 0:
@@ -259,13 +257,15 @@ def train(opt):
                 else:
                     sc_flag = False
 
-
-                print("Calculating validation score for val data")                
-                eval_kwargs = {'split': 'val',
-                                'dataset': opt.input_json}
-                eval_kwargs.update(vars(opt))
-                val_loss, predictions, lang_stats = eval_utils.eval_split(
-                    dp_model, lw_model.crit, loader, eval_kwargs)
+                val_loss, predictions, lang_stats = None, None, None
+                if not opt.nocaps_eval or not opt.do_not_eval_val:
+                    # Nocaps has only one data split
+                    print("Calculating validation score for val data")                
+                    eval_kwargs = {'split': 'val',
+                                    'dataset': opt.input_json}
+                    eval_kwargs.update(vars(opt))
+                    val_loss, predictions, lang_stats = eval_utils.eval_split(
+                        dp_model, lw_model.crit, loader, eval_kwargs)
 
                 # Rechecking on train data too
                 print("Calculating validation score for train data")
@@ -273,13 +273,15 @@ def train(opt):
                 if not opt.do_not_generate_cider_plots:
                     eval_kwargs_train = {'split': 'train',
                                     'dataset': opt.val_json, 
-                                    'num_images': opt.train_images_use_for_val}
+                                    'num_images': opt.train_images_use_for_val,
+                                    'is_nocaps' : opt.nocaps_eval}
                     eval_kwargs_train.update(vars(opt))
                     _, _, train_lang_stats = eval_utils.eval_split(
                         dp_model, lw_model.crit, loader_for_eval_scores, eval_kwargs_train)
                     
                 # Write validation result into summary
-                add_summary_value(tb_summary_writer, 'validation loss', val_loss, iteration)
+                if val_loss is not None:
+                    add_summary_value(tb_summary_writer, 'validation loss', val_loss, iteration)
                 if lang_stats is not None:
                     add_summary_value(tb_summary_writer, 'CIDEr', lang_stats['CIDEr'], iteration)
                 
@@ -289,7 +291,9 @@ def train(opt):
                 val_result_history[iteration] = {'loss': val_loss, 'lang_stats': lang_stats, 'predictions': predictions}
 
                 if iteration != 0: # Easy bookkeeping
-                    if not opt.do_not_generate_cider_plots:
+                    if False:
+                        # Not needed now
+
                         # Calculate actual cider values of previous iterations
                         # Doing this here to take advantage of batching
 
@@ -308,16 +312,17 @@ def train(opt):
                 gen_captions_since_last_checkpoint = []
 
                 # Save model if is improving on validation result    
-                if opt.language_eval == 1:
-                    current_score = lang_stats['CIDEr']
-                else:
-                    current_score = - val_loss
 
                 best_flag = False
+                if not opt.nocaps_eval or not opt.do_not_eval_val:
+                    if opt.language_eval == 1:
+                        current_score = lang_stats['CIDEr']
+                    else:
+                        current_score = - val_loss
 
-                if best_val_score is None or current_score > best_val_score:
-                    best_val_score = current_score
-                    best_flag = True
+                    if best_val_score is None or current_score > best_val_score:
+                        best_val_score = current_score
+                        best_flag = True
                         
                 # Dump miscalleous informations
                 infos['best_val_score'] = best_val_score
@@ -343,7 +348,7 @@ def train(opt):
                 
                 if epoch >= opt.max_epochs:
                     break
-    
+
                 epoch_done = False
                     
             if iteration % 100 == 0:
@@ -402,10 +407,6 @@ def train(opt):
             infos['epoch'] = epoch
             infos['iterators'] = loader.iterators
             infos['split_ix'] = loader.split_ix
-            
-            # Stop if reaching max epochs
-            # if epoch >= opt.max_epochs and opt.max_epochs != -1:
-            #     break
         
         if cider_model is not None:
             final_cider_model_weights = list(cider_model.parameters())

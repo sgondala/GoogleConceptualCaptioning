@@ -115,3 +115,12 @@ python train.py --batch_size 50 --learning_rate 5e-5 --checkpoint_path checkpoin
 python train.py --batch_size 100 --learning_rate 3e-5 --checkpoint_path checkpoints/experiments_on_coco_without_cc_Apr_14_3/coco_8_val_val_ref_caps_sc_2_0_2_3e5_batch_100 --save_checkpoint_every 50 --val_images_use 5000 --max_epochs 15 --start_from checkpoints/coco_on_base_rm_8_exp_1_3e5_Apr_14_3/ --use_ref_caps --input_json data/cocotalk_coco8_split_as_train_val.json --id_language_eval checkpoints_experiments_on_coco_without_cc_Apr_14_3_coco_8_val_val_ref_caps_sc_2_0_2_3e5_batch_100 --losses_log_every 25 --ppo_iters 2 --ppo_clip_param 0.2 --val_json data/cocotalk_coco8_split_as_train_val.json
 
 python train.py --batch_size 100 --learning_rate 1e-5 --checkpoint_path checkpoints/experiments_on_coco_without_cc_Apr_14_3/coco_8_val_val_ref_caps_sc_2_0_1_1e5_batch_100 --save_checkpoint_every 50 --val_images_use 5000 --max_epochs 15 --start_from checkpoints/coco_on_base_rm_8_exp_1_3e5_Apr_14_3/ --use_ref_caps --input_json data/cocotalk_coco8_split_as_train_val.json --id_language_eval checkpoints_experiments_on_coco_without_cc_Apr_14_3_coco_8_val_val_ref_caps_sc_2_0_1_1e5_batch_100 --losses_log_every 25 --ppo_iters 2 --ppo_clip_param 0.1 --val_json data/cocotalk_coco8_split_as_train_val.json
+
+
+
+
+
+
+
+
+

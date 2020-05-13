@@ -193,3 +193,41 @@ find . -name '[!0-9]*[0-9].pkl' -delete
 
 
 python eval.py --model checkpoints/hard_negative_continuous_models_coco_8_ID_3_ON_CC/cider_0.000005_loop_number_5/model-train_best.pth --infos_path checkpoints/hard_negative_continuous_models_coco_8_ID_3_ON_CC/cider_0.000005_loop_number_5/infos_-train_best.pkl --input_json data/cocotalk_coco8_split_as_train_val.json --split val --out_file_path eval_results/coco_8_val_test_on_hard_negative_continuous_models_coco_8_ID_3_ON_CC_cider_0.000005_loop_number_5_train_best --batch_size 500 --beam_size 1 --language_eval 0
+
+
+
+Test cider - 
+
+python train.py --batch_size 50 --learning_rate 5e-6 --checkpoint_path checkpoints/coco_8_actual_test_sc_on_coco_on_cc_using_pred_1_my_proposal_official/ --save_checkpoint_every 50 --val_images_use 500 --max_epochs 10 --start_from checkpoints/coco_on_cc_rm_8_exp_1_3e5/ --use_cider --cider_model ../hard_negative_all_outputs_coco_8_ID_FINAL_MECHANISM_MY_PROPOSAL_OFFICIAL_SPLIT/pytorch_model_1.bin --input_json data/cocotalk_coco8_actual_test_as_train.json --val_json data/cocotalk_coco8_actual_test_as_train.json --losses_log_every 50
+
+
+
+python train.py --batch_size 50 --learning_rate 5e-6 --checkpoint_path checkpoints/coco_8_actual_test_sc_on_coco_on_cc_using_pred_1_my_proposal_official/ --save_checkpoint_every 50 --val_images_use 500 --max_epochs 10 --start_from checkpoints/coco_on_cc_rm_8_exp_1_3e5/ --use_cider --cider_model ../hard_negative_all_outputs_coco_8_ID_FINAL_MECHANISM_MY_PROPOSAL_OFFICIAL_SPLIT/pytorch_model_1.bin --input_json data/cocotalk_coco8_actual_test_as_train.json --val_json data/cocotalk_coco8_actual_test_as_train.json --losses_log_every 50
+
+
+
+
+
+
+Val SC train
+
+python train.py --batch_size 50 --learning_rate 5e-6 --checkpoint_path checkpoints/coco_8_actual_val_sc_on_coco_on_cc_using_pred_1_my_proposal_official/ --save_checkpoint_every 50 --val_images_use 500 --max_epochs 10 --start_from checkpoints/coco_on_cc_rm_8_exp_1_3e5/ --use_cider --cider_model ../hard_negative_all_outputs_coco_8_ID_FINAL_MECHANISM_MY_PROPOSAL_OFFICIAL_SPLIT/pytorch_model_1.bin --input_json data/cocotalk_coco8_actual_split_as_train_val.json --val_json data/cocotalk_coco8_actual_split_as_train_val.json --losses_log_every 50
+
+
+python eval.py --model checkpoints/coco_on_base_rm_8_exp_1_3e5_Apr_30_30_epochs_batch_50_42001/model.pth --infos_path checkpoints/coco_on_base_rm_8_exp_1_3e5_Apr_30_30_epochs_batch_50_42001/infos_.pkl --input_json data/cocotalk_coco8_actual_test_as_train.json --split train --out_file_path eval_results/coco_8_val_test_actual_on_coco_on_base_rm_8_exp_1_3e5_Apr_30_30_epochs_batch_50_42001_model --batch_size 500 --beam_size 1 --language_eval 0
+
+
+
+Nocaps train
+
+
+python train.py --caption_model att2in2 --input_json data/nocapstalk_with_cc_vocab.json --input_fc_dir /srv/share2/sgondala/tmp/trainval_36/nocaps_val_vg_detector_features_adaptive.h5 --input_att_dir /srv/share2/sgondala/tmp/trainval_36/nocaps_val_vg_detector_features_adaptive.h5 --input_label data/nocapstalk_with_cc_vocab.h5 --batch_size 10 --learning_rate 3e-5 --learning_rate_decay_start 0 --scheduled_sampling_start 0 --checkpoint_path checkpoints/nocaps_train_no_checkpoint_jan_24_3e5 --save_checkpoint_every 6000 --val_images_use 150 --max_epochs 10 --rnn_size 2400
+
+
+
+python train.py --batch_size 50 --learning_rate 5e-6 --checkpoint_path checkpoints/nocaps_val_sc_on_coco_on_cc_using_predictor_on_train_seed_for_coco_with_cc_base/ --save_checkpoint_every 50 --input_fc_dir /srv/share2/sgondala/data_for_captioning_models/nocaps_val_resnet101_faster_rcnn_genome.tsv --input_att_dir /srv/share2/sgondala/data_for_captioning_models/nocaps_val_resnet101_faster_rcnn_genome.tsv --val_images_use 500 --max_epochs 5 --start_from checkpoints/coco_on_cc_rm_8_exp_1_3e5/ --use_cider --cider_model ../predictor_on_train_seed_for_coco_with_cc_base/pytorch_model_best.bin --input_json data/nocapstalk_with_cc_vocab.json --val_json data/nocapstalk_with_cc_vocab.json --input_label none --losses_log_every 50 --nocaps_eval 
+
+
+Nocaps eval
+
+python eval.py --model checkpoints/coco_on_base_rm_8_exp_1_3e5_Apr_30_30_epochs_batch_50_42001/model.pth --infos_path checkpoints/coco_on_base_rm_8_exp_1_3e5_Apr_30_30_epochs_batch_50_42001/infos_.pkl --input_fc_dir /srv/share2/sgondala/data_for_captioning_models/nocaps_val_resnet101_faster_rcnn_genome.tsv --input_att_dir /srv/share2/sgondala/data_for_captioning_models/nocaps_val_resnet101_faster_rcnn_genome.tsv --input_label data/nocapstalk_with_cc_vocab.h5 --input_json data/nocapstalk_with_cc_vocab.json --split train --out_file_path eval_results/nocaps_val_on_coco_on_base_rm_8_exp_1_3e5_Apr_30_30_epochs_batch_50_42001_model --batch_size 500 --beam_size 1 --language_eval 1 --nocaps_eval

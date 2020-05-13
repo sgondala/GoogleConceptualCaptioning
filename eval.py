@@ -18,6 +18,13 @@ import argparse
 import misc.utils as utils
 import torch
 
+# Reproducibility
+np.random.seed(42)
+torch.manual_seed(42)
+torch.cuda.manual_seed_all(42)
+torch.backends.cudnn.benchmark = False
+torch.backends.cudnn.deterministic = True
+
 # Input arguments and options
 parser = argparse.ArgumentParser()
 # Input paths

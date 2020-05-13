@@ -16,6 +16,7 @@ import os
 import sys
 import misc.utils as utils
 import eval_multi
+from nocaps.evalai import NocapsEvaluator
 
 bad_endings = ['a','an','the','in','for','at','of','with','before','after','on','upon','near','to','is','are','am']
 bad_endings += ['the']
@@ -27,51 +28,79 @@ def count_bad(sen):
     else:
         return 0
 
-def language_eval(dataset, preds, preds_n, eval_kwargs, cache_file_key):
-    model_id = eval_kwargs.get('id_language_eval', '')
-    eval_oracle = eval_kwargs.get('eval_oracle', 0)
+# def language_eval(dataset, preds, preds_n, eval_kwargs, cache_file_key):
+#     model_id = eval_kwargs.get('id_language_eval', '')
+#     eval_oracle = eval_kwargs.get('eval_oracle', 0)
     
-    import sys
-    sys.path.append("coco-caption")
-    annFile = 'coco-caption/annotations/captions_all2014.json'
+#     import sys
+#     sys.path.append("coco-caption")
+#     annFile = 'coco-caption/annotations/captions_all2014.json'
 
-    from pycocotools.coco import COCO
-    from pycocoevalcap.eval import COCOEvalCap
+#     from pycocotools.coco import COCO
+#     from pycocoevalcap.eval import COCOEvalCap
 
-    if not os.path.isdir('eval_results'):
-        os.mkdir('eval_results')
-    cache_path = os.path.join('eval_results/', '.cache_'+ model_id + '_' + cache_file_key + '.json')
+#     if not os.path.isdir('eval_results'):
+#         os.mkdir('eval_results')
+#     cache_path = os.path.join('eval_results/', '.cache_'+ model_id + '_' + cache_file_key + '.json')
 
-    coco = COCO(annFile)
-    valids = coco.getImgIds() # 123287 - All coco data
+#     coco = COCO(annFile)
+#     valids = coco.getImgIds() # 123287 - All coco data
 
-    preds_filt = [p for p in preds if p['image_id'] in valids]
-    print("Annotations file name " + cache_path)
-    print('Using %d/%d predictions' % (len(preds_filt), len(preds)))
-    json.dump(preds_filt, open(cache_path, 'w')) # serialize to temporary json file. Sigh, COCO API...
+#     preds_filt = [p for p in preds if p['image_id'] in valids]
+#     print("Annotations file name " + cache_path)
+#     print('Using %d/%d predictions' % (len(preds_filt), len(preds)))
+#     json.dump(preds_filt, open(cache_path, 'w')) # serialize to temporary json file. Sigh, COCO API...
 
-    cocoRes = coco.loadRes(cache_path)
-    cocoEval = COCOEvalCap(coco, cocoRes)
-    cocoEval.params['image_id'] = cocoRes.getImgIds()
-    cocoEval.evaluate()
+#     cocoRes = coco.loadRes(cache_path)
+#     cocoEval = COCOEvalCap(coco, cocoRes)
+#     cocoEval.params['image_id'] = cocoRes.getImgIds()
+#     cocoEval.evaluate()
 
-    # create output dictionary
+#     # create output dictionary
+#     out = {}
+#     for metric, score in cocoEval.eval.items():
+#         out[metric] = score
+    
+#     out['CIDErArary'] = cocoEval.evalArray['CIDEr']
+#     # if len(out['CIDErArary']) != len(preds):
+#     #     final_dict_to_dump = {}
+#     #     final_dict_to_dump['actual_preds'] = preds.tolist() if isinstance(preds, np.ndarray) else preds
+#     #     final_dict_to_dump['filtered_preds'] = preds_filt.tolist() if isinstance(preds_filt, np.ndarray) else preds_filt
+#     #     final_dict_to_dump['CIDErArary'] = out['CIDErArary'].tolist() if isinstance(out['CIDErArary'], np.ndarray) else out['CIDErArary']
+#     #     final_dict_to_dump['valids'] = valids.tolist() if isinstance(valids, np.ndarray) else valids
+#     #     filename_dump = 'eval_results/.cache_'+ model_id + '_' + cache_file_key + '_final_dump.json'
+#     #     json.dump(final_dict_to_dump, open(filename_dump, 'w'))
+#     #     print("Dumped to file ", filename_dump)
+#     #     assert False
+
+#     return out
+
+def language_eval_for_nocaps(predictions):
+    evaluator = NocapsEvaluator('val')
+    evaluation_metrics = evaluator.evaluate(predictions)
+
+    # for metric_name in evaluation_metrics:
+    for metric_name in ['CIDEr']:    
+        print(f"\t{metric_name}:")
+        for domain in evaluation_metrics[metric_name]:
+            print(f"\t\t{domain}:", evaluation_metrics[metric_name][domain])
+    
     out = {}
-    for metric, score in cocoEval.eval.items():
-        out[metric] = score
-    
-    out['CIDErArary'] = cocoEval.evalArray['CIDEr']
-    # if len(out['CIDErArary']) != len(preds):
-    #     final_dict_to_dump = {}
-    #     final_dict_to_dump['actual_preds'] = preds.tolist() if isinstance(preds, np.ndarray) else preds
-    #     final_dict_to_dump['filtered_preds'] = preds_filt.tolist() if isinstance(preds_filt, np.ndarray) else preds_filt
-    #     final_dict_to_dump['CIDErArary'] = out['CIDErArary'].tolist() if isinstance(out['CIDErArary'], np.ndarray) else out['CIDErArary']
-    #     final_dict_to_dump['valids'] = valids.tolist() if isinstance(valids, np.ndarray) else valids
-    #     filename_dump = 'eval_results/.cache_'+ model_id + '_' + cache_file_key + '_final_dump.json'
-    #     json.dump(final_dict_to_dump, open(filename_dump, 'w'))
-    #     print("Dumped to file ", filename_dump)
-    #     assert False
+    out['CIDEr'] = evaluation_metrics['CIDEr']['entire']
+    out['CIDErArary'] = []
+    return out
 
+def language_eval_for_coco(predictions, cache_file_key):
+    candName = 'eval_results/.cache_'+ cache_file_key + '.json'
+    resultFile = 'eval_results/.cache_'+ cache_file_key + '_cider.json'
+
+    json.dump(predictions, open(candName, 'w')) # serialize to temporary json file. Sigh, COCO API...
+    
+    bash_command = 'bash compute_cider_score.sh ' + candName + ' ' + resultFile 
+    os.system(bash_command)
+    CIDEr_array = json.load(open(resultFile))['CIDEr']
+    out['CIDEr'] = np.array(CIDEr_array).mean()
+    out['CIDErArary'] = CIDEr_array
     return out
 
 def eval_split(model, crit, loader, eval_kwargs={}):
@@ -86,6 +115,9 @@ def eval_split(model, crit, loader, eval_kwargs={}):
     sample_n = eval_kwargs.get('sample_n', 1)
     sample_n_method = eval_kwargs.get('sample_n_method', 'sample')
     remove_bad_endings = eval_kwargs.get('remove_bad_endings', 0)
+    nocaps_eval = eval_kwargs.get('nocaps_eval', False)
+    
+    print("Using nocaps ", nocaps_eval)
     os.environ["REMOVE_BAD_ENDINGS"] = str(remove_bad_endings) # Use this nasty way to make other code clean since it's a global configuration
 
     print("Split, Num images ", split, num_images)
@@ -219,10 +251,11 @@ def eval_split(model, crit, loader, eval_kwargs={}):
 
     lang_stats = None
     if lang_eval == 1:
-        # print("Predictions: ", predictions)
-        lang_stats = language_eval(dataset, predictions, n_predictions, eval_kwargs, split)
+        if not nocaps_eval:
+            # lang_stats = language_eval(dataset, predictions, n_predictions, eval_kwargs, split)
+            lang_stats = language_eval_for_coco(predictions, eval_kwargs.get('id_language_eval'))
+        else:
+            lang_stats = language_eval_for_nocaps(predictions)
 
-    # print("Lang stats :", lang_stats)
-    # Switch back to training mode
     model.train()
     return loss_sum/loss_evals, predictions, lang_stats
