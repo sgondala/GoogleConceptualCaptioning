@@ -40,7 +40,7 @@ opts.add_eval_options(parser)
 opts.add_diversity_opts(parser)
 opt = parser.parse_args()
 
-assert len(opt.out_file_path) != 0
+# assert len(opt.out_file_path) != 0
 
 print(opt)
 
@@ -94,7 +94,7 @@ loss, split_predictions, lang_stats = eval_utils.eval_split(model, crit, loader,
 
 print('loss: ', loss)
 if lang_stats:
-  print(lang_stats)
+  print(lang_stats['CIDEr'])
 
 if opt.post_processing == 1:
     for i in range(len(split_predictions)):

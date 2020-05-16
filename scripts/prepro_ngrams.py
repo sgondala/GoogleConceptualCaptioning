@@ -14,7 +14,7 @@ The hdf5 file contains several fields:
 /images is (N,3,256,256) uint8 array of raw image data in RGB format
 /labels is (M,max_length) uint32 array of encoded labels, zero padded
 /label_start_ix and /label_end_ix are (N,) uint32 arrays of pointers to the 
-  first and last indices (in range 1..M) of labels for each image
+  first and last indices (in xrange 1..M) of labels for each image
 /label_length stores the length of the sequence for each of the M sequences
 
 The json file has a dict that contains:

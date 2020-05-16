@@ -200,6 +200,7 @@ def parse_opt():
     parser.add_argument('--enable_cbs_support', action='store_true')
     parser.add_argument('--nocaps_eval', action='store_true')
     parser.add_argument('--do_not_eval_val', action='store_true')
+    parser.add_argument('--use_nocaps_for_early_stopping', action='store_true')
    # parser.add_argument('--id_language_eval', type=str, default='')
     
     # PPO
@@ -330,6 +331,7 @@ def add_eval_options(parser):
     # Other
     parser.add_argument('--enable_cbs_support', action='store_true')
     parser.add_argument('--nocaps_eval', action='store_true')
+    parser.add_argument('--id_language_eval', type=str, default='')
 
 def add_diversity_opts(parser):
     parser.add_argument('--sample_n', type=int, default=1,

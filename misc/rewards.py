@@ -17,7 +17,7 @@ from nltk import word_tokenize
 
 CiderD_scorer = None
 Bleu_scorer = None
-#CiderD_scorer = CiderD(df='corpus')
+# CiderD_scorer = CiderD(df='coco-val-df.p')
 
 def init_scorer(cached_tokens):
     global CiderD_scorer
@@ -55,7 +55,7 @@ def get_self_critical_reward(greedy_res, data_gts, gen_result, opt):
     gts = {i: gts[i % batch_size // seq_per_img] for i in range(2 * batch_size)}
     if opt.cider_reward_weight > 0:
         _, cider_scores = CiderD_scorer.compute_score(gts, res_)
-        print('Cider scores:', _)
+        # print('Cider scores:', _)
     else:
         cider_scores = 0
     if opt.bleu_reward_weight > 0:
@@ -91,9 +91,10 @@ def get_scores(data_gts, gen_result, opt):
     gts = {i: gts[i // seq_per_img] for i in range(batch_size)}
     if opt.cider_reward_weight > 0:
         _, cider_scores = CiderD_scorer.compute_score(gts, res_)
-        print('Cider scores:', _)
+        # print('Cider scores:', _)
     else:
         cider_scores = 0
+
     if opt.bleu_reward_weight > 0:
         _, bleu_scores = Bleu_scorer.compute_score(gts, res__)
         bleu_scores = np.array(bleu_scores[3])
@@ -101,6 +102,7 @@ def get_scores(data_gts, gen_result, opt):
     else:
         bleu_scores = 0
 
+    # scores = cider_scores
     scores = opt.cider_reward_weight * cider_scores + opt.bleu_reward_weight * bleu_scores
 
     return scores

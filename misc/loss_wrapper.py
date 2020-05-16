@@ -7,6 +7,7 @@ from misc.utils import decode_sequence_to_dict, clip_gradient
 from misc.slor_scoring import get_slor_rewards
 from misc.cider_scoring import get_self_critical_cider_reward_using_model
 from misc.vifidel_scoring import get_vifidel_rewards
+from eval_utils import language_eval_for_coco
 
 class LossWrapper(torch.nn.Module):
     def __init__(self, model, opt, ix_to_word=None, cider_dataset=None, cider_model=None, language_model=None, language_model_tokenizer = None, unigram_prob_dict=None, glove_embedding=None, glove_word_to_ix=None, ground_truth_object_annotations=None, model_greedy=None, is_classification_cider_model=False, classification_threshold = 0.999):
@@ -110,7 +111,11 @@ class LossWrapper(torch.nn.Module):
             if self.opt.use_ref_caps:
                 reward = get_self_critical_reward(greedy_res, gts, gen_result, self.opt)
                 out['reward'] = reward[:,0].mean()
-
+                # cider_array_greedy = np.array(language_eval_for_coco(out['greedy_captions'], self.opt.id_language_eval)['CIDErArary'])
+                # cider_array_gen = np.array(language_eval_for_coco(out['gen_captions'], self.opt.id_language_eval)['CIDErArary'])
+                # score = cider_array_gen - cider_array_greedy
+                # out['reward'] = score
+                # reward = np.repeat(score[:, np.newaxis], length_of_output, 1)
             else:
                 if self.opt.use_cider:
                     cider_reward, average_greedy_cider, average_gen_cider = get_self_critical_cider_reward_using_model(self.cider_dataset, self.cider_model, greedy_captions, gen_captions, self.opt, length_of_output, self.is_classification_cider_model, self.classification_threshold)
@@ -150,8 +155,9 @@ class LossWrapper(torch.nn.Module):
             self.optimizer.step()
             train_loss = loss.item()
             torch.cuda.synchronize()
-        
+        '''
         else:
+            assert False
             # SC reinforce
             self.model.eval()
             with torch.no_grad():
@@ -210,6 +216,6 @@ class LossWrapper(torch.nn.Module):
             self.optimizer.step()
             train_loss = loss.item()
             torch.cuda.synchronize()
-
+        '''
         out['loss'] = loss
         return out

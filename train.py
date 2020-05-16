@@ -22,7 +22,7 @@ import misc.utils as utils
 from misc.rewards import init_scorer, get_self_critical_reward
 from misc.loss_wrapper import LossWrapper
 from misc.utils import decode_sequence
-from eval_utils import language_eval
+from eval_utils import language_eval_for_coco
 import math
 from torchtext.vocab import GloVe
 
@@ -48,7 +48,9 @@ def add_summary_value(writer, key, value, iteration):
     wandb.log({key: value}, step=iteration)
 
 def eval_cider_and_append_values(predictions, writer, key, start_iteration, batch_size, losses_log_every, opt, cache_file_key):
-    out = language_eval(None, predictions, None, {'id_language_eval': opt.id_language_eval}, cache_file_key)
+    # out = language_eval(None, predictions, None, {'id_language_eval': opt.id_language_eval}, cache_file_key)
+    
+    out = language_eval_for_coco(predictions, opt.id_language_eval)
     cider_array = np.array(out['CIDErArary'])
 
     if len(cider_array) != len(predictions):
@@ -129,8 +131,7 @@ def train(opt):
 
     opt.vocab = loader.get_vocab()
     model = models.setup(opt).cuda()
-    # wandb.watch(model)
-
+    
     model_greedy = None
     initial_greedy_model_weights = []
     if opt.self_critical_after != -1:
@@ -253,12 +254,13 @@ def train(opt):
                 if opt.self_critical_after != -1 and epoch >= opt.self_critical_after:
                     sc_flag = True
                     if opt.use_ref_caps:
+                        # pass
                         init_scorer(opt.cached_tokens)
                 else:
                     sc_flag = False
 
                 val_loss, predictions, lang_stats = None, None, None
-                if not opt.nocaps_eval or not opt.do_not_eval_val:
+                if not (opt.nocaps_eval or opt.do_not_eval_val):
                     # Nocaps has only one data split
                     print("Calculating validation score for val data")                
                     eval_kwargs = {'split': 'val',
@@ -274,7 +276,7 @@ def train(opt):
                     eval_kwargs_train = {'split': 'train',
                                     'dataset': opt.val_json, 
                                     'num_images': opt.train_images_use_for_val,
-                                    'is_nocaps' : opt.nocaps_eval}
+                                    'is_nocaps' : opt.nocaps_eval or opt.use_nocaps_for_early_stopping}
                     eval_kwargs_train.update(vars(opt))
                     _, _, train_lang_stats = eval_utils.eval_split(
                         dp_model, lw_model.crit, loader_for_eval_scores, eval_kwargs_train)
@@ -314,7 +316,7 @@ def train(opt):
                 # Save model if is improving on validation result    
 
                 best_flag = False
-                if not opt.nocaps_eval or not opt.do_not_eval_val:
+                if not (opt.nocaps_eval or opt.do_not_eval_val):
                     if opt.language_eval == 1:
                         current_score = lang_stats['CIDEr']
                     else:

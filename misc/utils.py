@@ -9,7 +9,7 @@ import numpy as np
 import torch.optim as optim
 import os
 
-from .rewards import get_scores
+# from .rewards import get_scores
 import torch.nn.functional as F
 
 import six
@@ -151,7 +151,7 @@ class PPOCriterion(nn.Module):
         surr2 = torch.clamp(ratio, 1 - self.clip_param, 1 + self.clip_param) * atarg
         pol_surr = -torch.min(surr1, surr2).mean() # PPO's pessimistic surrogate (L^CLIP)
         return pol_surr
-
+'''
 class StructureLosses(nn.Module):
     def __init__(self, opt):
         super(StructureLosses, self).__init__()
@@ -290,6 +290,7 @@ class StructureLosses(nn.Module):
                 output = torch.sum(output) / torch.sum(mask)
 
         return output
+'''
 
 class LanguageModelCriterion(nn.Module):
     def __init__(self):
