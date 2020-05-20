@@ -6,8 +6,11 @@
 # Creation Date: Sun Feb  8 14:16:54 2015
 #
 # Authors: Ramakrishna Vedantam <vrama91@vt.edu> and Tsung-Yi Lin <tl483@cornell.edu>
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
 
-from ciderD_scorer import CiderScorer
+from .ciderD_scorer import CiderScorer
 import pdb
 
 class CiderD:
@@ -22,6 +25,7 @@ class CiderD:
         self._sigma = sigma
         # set which where to compute document frequencies from
         self._df = df
+        self.cider_scorer = CiderScorer(n=self._n, df_mode=self._df)
 
     def compute_score(self, gts, res):
         """
@@ -31,8 +35,9 @@ class CiderD:
         :return: cider (float) : computed CIDEr score for the corpus
         """
 
-        cider_scorer = CiderScorer(n=self._n)
-
+        # clear all the previous hypos and refs
+        tmp_cider_scorer = self.cider_scorer.copy_empty()
+        tmp_cider_scorer.clear()
         for res_id in res:
 
             hypo = res_id['caption']
@@ -43,9 +48,9 @@ class CiderD:
             assert(len(hypo) == 1)
             assert(type(ref) is list)
             assert(len(ref) > 0)
-            cider_scorer += (hypo[0], ref)
+            tmp_cider_scorer += (hypo[0], ref)
 
-        (score, scores) = cider_scorer.compute_score(self._df)
+        (score, scores) = tmp_cider_scorer.compute_score()
 
         return score, scores
 

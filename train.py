@@ -131,6 +131,7 @@ def train(opt):
 
     opt.vocab = loader.get_vocab()
     model = models.setup(opt).cuda()
+    wandb.watch(model, log='all')
     
     model_greedy = None
     initial_greedy_model_weights = []
@@ -445,7 +446,8 @@ if opt.self_critical_after != -1:
         assert False, "Set dropout prob to 0 during PPO training"
 
 if opt.enable_cbs_support:
-    assert opt.input_encoding_size == 300
+    pass
+    # assert opt.input_encoding_size == 300
 
 opt.id_language_eval = opt.checkpoint_path.replace('/', '_')
 print("Id language eval is ", opt.id_language_eval)

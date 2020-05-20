@@ -73,6 +73,7 @@ class AttModel(CaptionModel):
         if opt.enable_cbs_support:
             glove_vectors = self.initialize_glove(opt)
             embedding_layer = nn.Embedding.from_pretrained(glove_vectors, freeze=True)
+            # embedding_layer = nn.Embedding(self.vocab_size + 1, self.input_encoding_size)
         else:
             embedding_layer = nn.Embedding(self.vocab_size + 1, self.input_encoding_size)
         self.embed = nn.Sequential(embedding_layer,
@@ -91,7 +92,7 @@ class AttModel(CaptionModel):
         self.logit_layers = getattr(opt, 'logit_layers', 1)
         if self.logit_layers == 1:
             if opt.enable_cbs_support:
-                temp_linear_layer = nn.Linear(self.input_encoding_size, self.vocab_size + 1)
+                temp_linear_layer = nn.Linear(self.input_encoding_size, self.vocab_size + 1, bias = False)
                 temp_linear_layer.weight = embedding_layer.weight
                 self.logit = nn.Sequential(
                     nn.Linear(self.rnn_size, self.input_encoding_size),
@@ -116,9 +117,11 @@ class AttModel(CaptionModel):
         for index, word in opt.vocab.items():
             if word in glove.stoi:
                 glove_vectors[int(index)] = glove.vectors[glove.stoi[word]]
-            elif word != 'UNK':
+            else:
+                # elif word != 'UNK':
                 # Nocaps paper - pad,unk - 0; Boundary - random
-                # We give 0 to all because pad = boundary for us
+                # We give 0 to boundary
+                # Random to pad and unk
                 glove_vectors[int(index)] = 2 * torch.randn(300) - 1
         return glove_vectors
 

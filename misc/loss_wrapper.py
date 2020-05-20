@@ -146,6 +146,7 @@ class LossWrapper(torch.nn.Module):
                 torch.cuda.synchronize()
 
         elif not sc_flag:
+            # print("Using CE Loss")
             loss = self.crit(self.model(fc_feats, att_feats, labels, att_masks), labels[:,1:], masks[:,1:], reduction=reduction)
 
             # Backprop

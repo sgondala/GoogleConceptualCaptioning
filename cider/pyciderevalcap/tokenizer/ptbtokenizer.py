@@ -7,6 +7,9 @@
 # Creation Date : 29-12-2014
 # Last Modified : Thu Mar 19 09:53:35 2015
 # Authors : Hao Fang <hfang@uw.edu> and Tsung-Yi Lin <tl483@cornell.edu>
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
 
 import os
 import pdb # python debugger
@@ -38,8 +41,8 @@ class PTBTokenizer:
         # ======================================================
 
         if self.source == 'gts':
-            image_id = [k for k, v in captions_for_image.items() for _ in range(len(v))]
-            sentences = '\n'.join([c['caption'].replace('\n', ' ') for k, v in captions_for_image.items() for c in v])
+            image_id = [k for k, v in list(captions_for_image.items()) for _ in range(len(v))]
+            sentences = '\n'.join([c['caption'].replace('\n', ' ') for k, v in list(captions_for_image.items()) for c in v])
             final_tokenized_captions_for_image = {}
 
         elif self.source == 'res':
@@ -53,7 +56,7 @@ class PTBTokenizer:
         # ======================================================
         path_to_jar_dirname=os.path.dirname(os.path.abspath(__file__))
         tmp_file = tempfile.NamedTemporaryFile(delete=False, dir=path_to_jar_dirname)
-        tmp_file.write(sentences)
+        tmp_file.write(sentences.encode('utf-8'))
         tmp_file.close()
 
         # ======================================================
@@ -63,7 +66,7 @@ class PTBTokenizer:
         p_tokenizer = subprocess.Popen(cmd, cwd=path_to_jar_dirname, \
                 stdout=subprocess.PIPE)
         token_lines = p_tokenizer.communicate(input=sentences.rstrip())[0]
-        lines = token_lines.split('\n')
+        lines = token_lines.decode("utf-8").split('\n')
         # remove temp file
         os.remove(tmp_file.name)
 

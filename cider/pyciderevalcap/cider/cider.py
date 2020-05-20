@@ -9,8 +9,11 @@
 #
 # Authors: Ramakrishna Vedantam <vrama91@vt.edu> and
 # Tsung-Yi Lin <tl483@cornell.edu>
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
 
-from cider_scorer import CiderScorer
+from .cider_scorer import CiderScorer
 
 
 class Cider:
@@ -29,6 +32,7 @@ class Cider:
         # set cider to sum over 1 to 4-grams
         self._n = n
         self._df = df
+        self.cider_scorer = CiderScorer(n=self._n, df_mode=self._df)
 
     def compute_score(self, gts, res):
         """
@@ -38,7 +42,8 @@ class Cider:
         : return: cider (float) : computed CIDEr score for the corpus
         """
 
-        cider_scorer = CiderScorer(n=self._n)
+        # clear all the previous hypos and refs
+        self.cider_scorer.clear()
 
         for res_id in res:
 
@@ -50,9 +55,9 @@ class Cider:
             assert(len(hypo) == 1)
             assert(type(ref) is list)
             assert(len(ref) > 0)
-            cider_scorer += (hypo[0], ref)
+            self.cider_scorer += (hypo[0], ref)
 
-        (score, scores) = cider_scorer.compute_score(self._df)
+        (score, scores) = self.cider_scorer.compute_score()
 
         return score, scores
 

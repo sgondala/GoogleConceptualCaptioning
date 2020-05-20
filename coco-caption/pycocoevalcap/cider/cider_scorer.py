@@ -152,16 +152,16 @@ class CiderScorer(object):
             for n in range(self.n):
                 # ngram
                 for (ngram,count) in vec_hyp[n].items():
-                    val[n] += vec_hyp[n][ngram] * vec_ref[n][ngram]
+                    # val[n] += vec_hyp[n][ngram] * vec_ref[n][ngram]
                     # # vrama91 : added clipping
-                    # val[n] += min(vec_hyp[n][ngram], vec_ref[n][ngram]) * vec_ref[n][ngram]
+                    val[n] += min(vec_hyp[n][ngram], vec_ref[n][ngram]) * vec_ref[n][ngram]
 
                 if (norm_hyp[n] != 0) and (norm_ref[n] != 0):
                     val[n] /= (norm_hyp[n]*norm_ref[n])
 
                 assert(not math.isnan(val[n]))
                 # vrama91: added a length based gaussian penalty
-                # val[n] *= np.e**(-(delta**2)/(2*self.sigma**2))
+                val[n] *= np.e**(-(delta**2)/(2*self.sigma**2))
             return val
 
         # compute log reference length

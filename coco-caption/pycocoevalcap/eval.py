@@ -64,6 +64,7 @@ class COCOEvalCap:
                     self.setImgToEvalImgs(scs, list(gts.keys()), m)
                     # print("%s: %0.3f"%(m, sc))
             else:
+                # print("In type list")	
                 self.setEval(score, method)
                 self.setEvalArray(scores, method)
                 self.setImgToEvalImgs(scores, list(gts.keys()), method)
@@ -85,3 +86,9 @@ class COCOEvalCap:
 
     def setEvalImgs(self):
         self.evalImgs = [eval for imgId, eval in list(self.imgToEval.items())]
+
+    def getEval(self, method):
+        return self.eval[method]
+
+    def getEvalArray(self, method):
+        return self.evalArray[method]

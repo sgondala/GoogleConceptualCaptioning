@@ -1,53 +1,31 @@
 # coding: utf-8
 
 # In[1]:
-
 # demo script for running CIDEr
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
 import json
-import argparse
 from pydataformat.loadData import LoadData
 from pyciderevalcap.eval import CIDErEvalCap as ciderEval
-import sys
 
-parser = argparse.ArgumentParser(description='Add val files')
-parser.add_argument('--idf', type=str, default='coco-val-df')
-parser.add_argument('--candName', type=str, default='')
-parser.add_argument('--pathToData', type=str, default='data/')
-parser.add_argument('--refName', type=str, default='coco_ref.json')
-parser.add_argument('--resultFile', type=str, default='')
-parser.add_argument('--load_from_params', action='store_true')
+# load the configuration file
+config = json.loads(open('params.json', 'r').read())
 
-args = parser.parse_args()
-
-pathToData = None
-refName = None
-candName = None
-resultFile = None
-df_mode = None
-
-if args.load_from_params:
-    config = json.loads(open('params.json', 'r').read())
-    pathToData = config['pathToData']
-    refName = config['refName']
-    candName = config['candName']
-    resultFile = config['resultFile']
-    df_mode = config['idf']
-else:
-    pathToData = args.pathToData
-    refName = args.refName
-    candName = args.candName
-    resultFile = args.resultFile
-    df_mode = args.idf
-
+pathToData = config['pathToData']
+refName = config['refName']
+candName = config['candName']
+resultFile = config['resultFile']
+df_mode = config['idf']
 
 # Print the parameters
-print "Running CIDEr with the following settings"
-print "*****************************"
-print "Reference File:%s" % (refName)
-print "Candidate File:%s" % (candName)
-print "Result File:%s" % (resultFile)
-print "IDF:%s" % (df_mode)
-print "*****************************"
+print("Running CIDEr with the following settings")
+print("*****************************")
+print("Reference File:%s" % (refName))
+print("Candidate File:%s" % (candName))
+print("Result File:%s" % (resultFile))
+print("IDF:%s" % (df_mode))
+print("*****************************")
 
 # In[2]:
 
