@@ -1,3 +1,12 @@
+# Modifications over base - 
+
+- Added SCST using PPO
+- Added SCST using VIFIDEL, SLOR scores
+- Added support to use a NN to SCST
+
+-----------------------------------------------------
+
+
 # Code for conceptual dataset challenge
 
 This is code by TTIC+BIU team for [conceptual captions challenge](http://www.conceptualcaptions.com/). This code shares highly with [self-critical.pytorch](https://github.com/ruotianluo/self-critical.pytorch).
