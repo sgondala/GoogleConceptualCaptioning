@@ -1,8 +1,8 @@
 # Modifications over base - 
 
-- Added SCST using PPO
-- Added SCST using VIFIDEL, SLOR scores
-- Added support to use a NN to SCST
+- Modified Self Critial Training to use PPO instead of REINFORCE  
+- Added support to use VIFIDEL and SLOR scores as Self Critial Training rewards 
+- Added support to use pretrained CIDER predictor (Or a module that takes (image, caption) and returns a metric) as Self Critical Training reward
 
 -----------------------------------------------------
 
